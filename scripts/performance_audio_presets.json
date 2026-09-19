@@ -1,0 +1,77 @@
+{
+  "default": "subtle",
+  "presets": {
+    "clean": {
+      "label": "Normalize only",
+      "input_target_lufs": -16,
+      "input_true_peak_db": -3,
+      "target_lufs": -16,
+      "true_peak_db": -1.5,
+      "max_boost_db": 18,
+      "highpass_hz": 0,
+      "compressor_ratio": 1,
+      "compressor_threshold_db": -18,
+      "ambience_mix": 0,
+      "ambience_decay_seconds": 0.25,
+      "ambience_predelay_ms": 6,
+      "reverb_mix": 0,
+      "reverb_decay_seconds": 0.8,
+      "reverb_predelay_ms": 20
+    },
+    "subtle": {
+      "label": "Subtle room",
+      "input_target_lufs": -16,
+      "input_true_peak_db": -3,
+      "target_lufs": -16,
+      "true_peak_db": -1.5,
+      "max_boost_db": 18,
+      "highpass_hz": 40,
+      "compressor_ratio": 1,
+      "compressor_threshold_db": -18,
+      "ambience_mix": 0.08,
+      "ambience_decay_seconds": 0.22,
+      "ambience_predelay_ms": 6,
+      "reverb_mix": 0.10,
+      "reverb_decay_seconds": 0.8,
+      "reverb_predelay_ms": 20
+    },
+    "fuller": {
+      "label": "Fuller room + gentle compression",
+      "input_target_lufs": -16,
+      "input_true_peak_db": -3,
+      "target_lufs": -16,
+      "true_peak_db": -1.5,
+      "max_boost_db": 18,
+      "highpass_hz": 40,
+      "compressor_ratio": 1.6,
+      "compressor_threshold_db": -18,
+      "ambience_mix": 0.12,
+      "ambience_decay_seconds": 0.30,
+      "ambience_predelay_ms": 8,
+      "reverb_mix": 0.18,
+      "reverb_decay_seconds": 1.3,
+      "reverb_predelay_ms": 25
+    },
+    "jake-preferred": {
+      "label": "Jake Preferred",
+      "input_target_lufs": -16,
+      "input_true_peak_db": -3,
+      "target_lufs": -16,
+      "true_peak_db": -1.5,
+      "max_boost_db": 18,
+      "highpass_hz": 70,
+      "eq_bands": [
+        {"frequency_hz": 250, "gain_db": -2, "q": 0.8},
+        {"frequency_hz": 3000, "gain_db": 1.5, "q": 0.8}
+      ],
+      "compressor_ratio": 1.8823529411764706,
+      "compressor_threshold_db": -18,
+      "ambience_mix": 0.168,
+      "ambience_decay_seconds": 0.30,
+      "ambience_predelay_ms": 8,
+      "reverb_mix": 0.252,
+      "reverb_decay_seconds": 1.3,
+      "reverb_predelay_ms": 25
+    }
+  }
+}
