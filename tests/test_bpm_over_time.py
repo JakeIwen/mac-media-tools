@@ -93,6 +93,10 @@ class BPMTests(unittest.TestCase):
         folder = result.parent
         data = json.loads((folder / "analysis.json").read_text())
         self.assertEqual(data["point_count"], 60)
+        self.assertEqual(data["playback"]["file"], "playback.m4a")
+        playback = bpm.media.probe(folder / "playback.m4a")
+        self.assertAlmostEqual(float(playback["format"]["duration"]), 12, delta=.05)
+        self.assertEqual(bpm.media.stream(playback, "audio")["codec_name"], "aac")
         with (folder / "bpm-data.csv").open() as file:
             self.assertEqual(len(list(csv.DictReader(file))), 60)
         self.assertGreater((folder / "bpm-over-time.png").stat().st_size, 1000)
@@ -122,6 +126,26 @@ class BPMTests(unittest.TestCase):
         self.assertAlmostEqual(len(samples)/RATE, 14, delta=0.02)
         self.assertLess(np.max(np.abs(samples[:2*RATE])), 1e-6)
         self.assertGreater(np.max(np.abs(samples[2*RATE:])), 0.1)
+        preview = self.root / "playback.m4a"
+        bpm.export_playback(video, preview)
+        aligned = self.root / "preview-decode"; aligned.mkdir()
+        listening, _ = bpm.decode(preview, aligned, 0)
+        self.assertAlmostEqual(len(listening)/RATE, 14, delta=.05)
+        self.assertLess(np.max(np.abs(listening[:2*RATE])), .001)
+        self.assertGreater(np.max(np.abs(listening[2*RATE:])), .05)
+
+    def test_playback_uses_selected_track(self):
+        silent = self.wav("silence.wav", np.zeros(12*RATE, dtype=np.float32))
+        rhythmic = self.wav("rhythm.wav", clicks(12, 120))
+        source = self.root / "two-tracks.mov"
+        bpm.media.run([bpm.media.tool("ffmpeg"), "-v", "error", "-i", silent,
+                       "-i", rhythmic, "-map", "0:a", "-map", "1:a", "-c:a", "pcm_s16le", source])
+        preview = self.root / "selected.m4a"
+        bpm.export_playback(source, preview, audio_track=1)
+        scratch = self.root / "selected-decode"; scratch.mkdir()
+        listening, _ = bpm.decode(preview, scratch, 0)
+        self.assertGreater(np.max(np.abs(listening)), .05)
+        self.assertAlmostEqual(bpm.analyze_samples(listening)["median_bpm"], 120, delta=2)
 
     def test_cli_rejects_invalid_analysis_parameters(self):
         for options in (("--points", "1"), ("--window-seconds", "nan"), ("--min-bpm", "250", "--max-bpm", "100")):

@@ -30,7 +30,9 @@ use other FFmpeg-supported formats.
 The job runs in the background and opens an offline HTML report. Each source gets
 a neighboring `filename-bpm` folder, containing:
 
-- `bpm-over-time.html`: graph with hover/focus details and half/double-tempo views.
+- `bpm-over-time.html`: audio player, moving playhead, click-to-seek graph,
+  hover/focus details and half/double-tempo views.
+- `playback.m4a`: 192 kb/s AAC listening copy, aligned to the analyzed timeline.
 - `bpm-over-time.png` and `.svg`: standalone graph images for sharing/export.
 - `bpm-data.csv`: exactly 60 rows by default, including missing estimates.
 - `analysis.json`: settings, measurements, competing candidates and raw local winners.
@@ -39,6 +41,19 @@ Repeated runs create numbered report folders. Existing reports and media are
 never overwritten. If report creation fails, any partial report folder is kept
 and identified in the log. The HTML contains all chart/data content inline and
 requires no local webserver or internet connection.
+
+Press play to follow the red cursor along the time axis. Click within the plot
+to seek without changing the play/pause state, or use the position slider
+(including its keyboard arrow controls). Focus a plotted point and press Enter
+to seek to it. The outlined point and BPM readout identify the nearest rolling
+estimate, not an instantaneous beat measurement. Half/double interpretation
+also updates this readout; it does not change playback speed.
+
+Keep `playback.m4a` beside the HTML when moving or sharing a report. The listening
+copy uses the selected track, preserves its timeline offset and video-only
+silence, and is encoded separately from the temporary mono analysis signal.
+It is a compressed stereo preview; the original audio/video is unchanged.
+Existing reports must be regenerated to gain playback.
 
 ## What each point means
 
@@ -159,7 +174,7 @@ node --test macbook/tests/test_bpm_menu.cjs
 A preview for the earlier recording was generated without changing it:
 
 ```sh
-open "$HOME/dev/scripts/tmp/bpm-rework/IMG_3287 2-bpm/bpm-over-time.html"
+open "$HOME/dev/scripts/tmp/bpm-playback/IMG_3287 2-bpm/bpm-over-time.html"
 ```
 
 The first implementation incorrectly switched between roughly 73, 98 and 147 BPM

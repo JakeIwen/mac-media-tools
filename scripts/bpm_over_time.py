@@ -173,10 +173,7 @@ def analyze_samples(samples, sample_rate=SAMPLE_RATE, points=60, window_seconds=
             "clarity_note": "Heuristic periodicity score, not a probability; metrical ambiguity remains."}
 
 
-def decode(source, directory, audio_track):
-    np, _, _ = libraries()
-    info = media.probe(source)
-    audio = media.stream(info, "audio", audio_track)
+def timeline_filters(info, audio):
     origin = float(info.get("format", {}).get("start_time", audio.get("start_time", 0)) or 0)
     offset = float(audio.get("start_time", origin)) - origin
     length = offset + media.duration(info, audio)
@@ -189,6 +186,14 @@ def decode(source, directory, audio_track):
     elif offset < 0:
         filters += [f"atrim=start={-offset:.9f}", "asetpts=PTS-STARTPTS"]
     filters += ["apad", f"atrim=duration={length:.9f}"]
+    return filters
+
+
+def decode(source, directory, audio_track):
+    np, _, _ = libraries()
+    info = media.probe(source)
+    audio = media.stream(info, "audio", audio_track)
+    filters = timeline_filters(info, audio)
     raw = directory / "analysis.f32"
     media.run([media.tool("ffmpeg"), "-v", "error", "-nostdin", "-i", source,
                "-map", f"0:{audio['index']}", "-af", ",".join(filters), "-ac", "1",
@@ -196,6 +201,19 @@ def decode(source, directory, audio_track):
     if raw.stat().st_size == 0:
         raise media.Error("The selected audio track decoded to no samples.")
     return np.fromfile(raw, dtype="<f4"), audio
+
+
+def export_playback(source, destination, audio_track=0):
+    """Browser listening copy, using exactly the analysis timeline and track."""
+    before = media.fingerprint(source)
+    info = media.probe(source)
+    audio = media.stream(info, "audio", audio_track)
+    media.run([media.tool("ffmpeg"), "-v", "error", "-nostdin", "-n", "-i", source,
+               "-map", f"0:{audio['index']}", "-af", ",".join(timeline_filters(info, audio)),
+               "-vn", "-map_metadata", "-1", "-ac", "2", "-ar", "48000",
+               "-c:a", "aac", "-b:a", "192k", "-movflags", "+faststart", destination])
+    if media.fingerprint(source) != before:
+        raise media.Error("Source changed while creating the listening copy.")
 
 
 def plot_report(report, folder):
@@ -227,6 +245,7 @@ def plot_report(report, folder):
         ax.set_ylim(report["min_bpm"], report["max_bpm"])
         ax.text(0.5, 0.5, "No reliable rhythmic estimates", ha="center", va="center", transform=ax.transAxes)
     ax.set_xlim(0, report["duration_s"])
+    ax.patch.set_gid("tempo-plot-area")
     ax.xaxis.set_major_formatter(FuncFormatter(lambda t, _: f"{int(t)//60}:{int(t)%60:02d}"))
     ax.set(xlabel="Time (minutes:seconds)", ylabel="Tempo (BPM)", title="BPM over time")
     ax.grid(alpha=0.18)
@@ -249,7 +268,7 @@ def html_report(report, svg):
     return re.sub(r"\{\{(TITLE|SVG|DATA)\}\}", lambda m: parts[m[1]], template)
 
 
-def save_report(report, parent, stem):
+def save_report(report, parent, stem, playback_source=None):
     number = 1
     while True:
         folder = parent / (stem + "-bpm" + ("" if number == 1 else f"-{number}"))
@@ -259,6 +278,10 @@ def save_report(report, parent, stem):
         except FileExistsError:
             number += 1
     try:
+        if playback_source is not None:
+            print("Creating audio for report playback...", flush=True)
+            export_playback(playback_source, folder / "playback.m4a", report.get("audio_track", 0))
+            report["playback"] = {"file": "playback.m4a", "codec": "aac", "bitrate": 192000}
         (folder / "analysis.json").write_text(json.dumps(report, indent=2, allow_nan=False) + "\n")
         with (folder / "bpm-data.csv").open("w", newline="") as file:
             fields = ["time_s", "window_start_s", "window_end_s", "bpm", "local_bpm", "clarity", "ambiguous", "continuity_selected", "onsets", "rms_dbfs"]
@@ -288,7 +311,7 @@ def analyze_file(source, output_dir=None, points=60, window_seconds=None, min_bp
         raise media.Error("Source changed during analysis; report not saved.")
     report.update(source=str(source), audio_track=audio_track, audio_codec=audio.get("codec_name"),
                   analysis_sample_rate=SAMPLE_RATE)
-    result = save_report(report, parent, source.stem)
+    result = save_report(report, parent, source.stem, playback_source=source)
     print(f"Estimated {report['valid_points']}/{points} points; median {report['median_bpm']} BPM.\nReport: {result}", flush=True)
     return result
 

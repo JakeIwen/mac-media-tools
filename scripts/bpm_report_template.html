@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:;">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:; media-src 'self' file:;">
 <title>BPM over time · {{TITLE}}</title>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#f1f5f9;color:#172033;font:16px/1.5 system-ui,-apple-system,sans-serif}
@@ -15,6 +15,7 @@ a{color:#2563eb}nav{display:flex;gap:18px;margin:18px 0;flex-wrap:wrap}.note{fon
 details{margin:20px 0;background:white;border:1px solid #e2e8f0;border-radius:10px;padding:16px}summary{cursor:pointer;font-weight:600}.table-wrap{overflow:auto;max-height:430px;margin-top:14px}
 table{border-collapse:collapse;width:100%;font-size:14px}th,td{text-align:left;border-bottom:1px solid #e2e8f0;padding:8px;white-space:nowrap}th{position:sticky;top:0;background:white}
 g[id^=tempo-point-]{cursor:help}g[id^=tempo-point-]:focus{outline:2px solid #2563eb}.method{color:#475569;font-size:14px}
+.playback{border-bottom:1px solid #e2e8f0;padding:0 0 16px;margin-bottom:16px}.playback audio{display:block;width:100%;margin:10px 0}.playback-status{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-variant-numeric:tabular-nums}.playback-status strong{color:#2563eb}#seek{width:100%;accent-color:#2563eb}#tempo-plot-area{cursor:crosshair}.active-tempo use{stroke:#172033!important;stroke-width:2}#playhead{pointer-events:none;stroke:#e11d48;stroke-width:1.6}
 @media(max-width:600px){main{padding:0 12px;margin:20px auto}.stats{gap:8px}.stat{padding:10px}.stat strong{font-size:22px}h1{font-size:26px}.chart{padding:8px}}
 </style></head><body><main>
 <header><p>LOCAL AUDIO ANALYSIS</p><h1>BPM over time</h1><p class="filename">{{TITLE}}</p></header>
@@ -25,6 +26,14 @@ g[id^=tempo-point-]{cursor:help}g[id^=tempo-point-]:focus{outline:2px solid #256
 </section>
 <div id="notice" class="notice" hidden></div>
 <section class="chart" aria-label="Tempo graph">
+<section class="playback" id="playback" aria-label="Recording playback" hidden>
+<strong>Listen along</strong>
+<audio id="audio" controls preload="metadata" aria-label="Play the analyzed audio track"></audio>
+<div class="playback-status"><span id="playback-time">0:00.0</span><strong id="playback-tempo"></strong></div>
+<label class="note" for="seek">Playback position</label><input id="seek" type="range" min="0" max="1" step="0.1" value="0" disabled>
+<p class="note" id="playback-help">Click anywhere inside the plot to seek, or use the position slider. The red line follows playback; the outlined point is the nearest rolling estimate.</p>
+<p class="note" id="playback-error" role="status" hidden></p>
+</section>
 <div class="toolbar"><span>Tempo interpretation</span><button data-factor="0.5" aria-pressed="false">½ tempo</button><button data-factor="1" aria-pressed="true">As analyzed</button><button data-factor="2" aria-pressed="false">Double tempo</button></div>
 <p class="note">Hover or focus a point for its window and rhythmic clarity. Interpretation buttons change this view only; downloads retain the analyzed values.</p>
 {{SVG}}
@@ -55,11 +64,48 @@ document.querySelectorAll('button[data-factor]').forEach(b=>b.setAttribute('aria
 const tbody=document.getElementById('measurements');tbody.replaceChildren();
 report.points.forEach(p=>{const row=document.createElement('tr');[fmt(p.time_s),p.bpm===null?'—':(p.bpm*factor).toFixed(1),p.bpm===null?'—':`${Math.round(p.clarity*100)}/100`,`${fmt(p.window_start_s)}–${fmt(p.window_end_s)}`,p.bpm===null?'No estimate':p.continuity_selected?'Continuity-selected candidate':p.ambiguous?'Competing candidates':p.clarity<.4?'Weak pulse':''].forEach(value=>{const cell=document.createElement('td');cell.textContent=value;row.append(cell)});tbody.append(row)});
 }
-document.querySelectorAll('button[data-factor]').forEach(button=>button.addEventListener('click',()=>{factor=Number(button.dataset.factor);tooltip.style.display='none';render()}));
+document.querySelectorAll('button[data-factor]').forEach(button=>button.addEventListener('click',()=>{factor=Number(button.dataset.factor);tooltip.style.display='none';render();updatePlayback()}));
 document.querySelectorAll('g[id^="tempo-point-"]').forEach(node=>{
 const p=report.points[Number(node.id.split('-').at(-1))];node.setAttribute('tabindex','0');node.setAttribute('aria-label',`Tempo sample at ${fmt(p.time_s)}`);
 function show(e){const rect=node.getBoundingClientRect();tooltip.textContent=`${fmt(p.time_s)} · ${(p.bpm*factor).toFixed(1)} BPM\nWindow ${fmt(p.window_start_s)}–${fmt(p.window_end_s)}\nRhythmic clarity ${Math.round(p.clarity*100)}/100${p.ambiguous?' · competing candidates':''}${p.continuity_selected?'\nIndependent local winner: '+(p.local_bpm*factor).toFixed(1)+' BPM':''}`;
 tooltip.style.display='block';tooltip.style.left=Math.max(8,Math.min(innerWidth-315,(e.clientX||rect.left)+12))+'px';tooltip.style.top=Math.max(8,Math.min(innerHeight-100,(e.clientY||rect.top)-85))+'px';}
-node.addEventListener('pointerenter',show);node.addEventListener('focus',show);node.addEventListener('pointerleave',()=>tooltip.style.display='none');node.addEventListener('blur',()=>tooltip.style.display='none');});
+node.addEventListener('pointerenter',show);node.addEventListener('focus',show);node.addEventListener('pointerleave',()=>tooltip.style.display='none');node.addEventListener('blur',()=>tooltip.style.display='none');
+node.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();seekTo(p.time_s)}});});
+const audio=document.getElementById('audio'),seek=document.getElementById('seek');
+const svg=document.querySelector('.chart svg'),plot=document.getElementById('tempo-plot-area');
+let playhead=null,plotBox=null,animation=null,activePoint=null;
+function updatePlayback(){
+  if(!report.playback)return;
+  const time=Math.max(0,Math.min(report.duration_s,audio.currentTime||0));
+  seek.value=time;seek.setAttribute('aria-valuetext',`${fmt(time)} of ${fmt(report.duration_s)}`);
+  document.getElementById('playback-time').textContent=`${fmt(time)} / ${fmt(report.duration_s)}`;
+  const p=report.points.reduce((best,p)=>Math.abs(p.time_s-time)<Math.abs(best.time_s-time)?p:best,report.points[0]);
+  document.getElementById('playback-tempo').textContent=p.bpm===null?'No estimate here':`${(p.bpm*factor).toFixed(1)} BPM · nearest window`;
+  if(playhead){const x=plotBox.x+plotBox.width*time/report.duration_s;playhead.setAttribute('x1',x);playhead.setAttribute('x2',x);}
+  const next=document.getElementById(`tempo-point-${report.points.indexOf(p)}`);
+  if(activePoint!==next){activePoint?.classList.remove('active-tempo');next?.classList.add('active-tempo');activePoint=next;}
+}
+function seekTo(time){
+  if(!report.playback||audio.readyState<1||audio.error)return;
+  audio.currentTime=Math.max(0,Math.min(report.duration_s,audio.duration,time));updatePlayback();
+}
+function animatePlayback(){updatePlayback();if(!audio.paused&&!audio.ended)animation=requestAnimationFrame(animatePlayback);}
+if(report.playback){
+  document.getElementById('playback').hidden=false;
+  seek.max=report.duration_s;
+  if(plot){
+    plotBox=plot.getBBox();playhead=document.createElementNS('http://www.w3.org/2000/svg','line');
+    playhead.id='playhead';playhead.setAttribute('y1',plotBox.y);playhead.setAttribute('y2',plotBox.y+plotBox.height);svg.append(playhead);
+    svg.addEventListener('click',e=>{const matrix=svg.getScreenCTM();if(!matrix)return;const point=new DOMPoint(e.clientX,e.clientY).matrixTransform(matrix.inverse());
+      if(point.x>=plotBox.x&&point.x<=plotBox.x+plotBox.width&&point.y>=plotBox.y&&point.y<=plotBox.y+plotBox.height)seekTo((point.x-plotBox.x)/plotBox.width*report.duration_s);});
+  }
+  audio.addEventListener('loadedmetadata',()=>{seek.disabled=false;updatePlayback()});
+  audio.addEventListener('play',()=>{cancelAnimationFrame(animation);animatePlayback()});
+  ['timeupdate','seeked','loadeddata'].forEach(event=>audio.addEventListener(event,updatePlayback));
+  ['pause','ended'].forEach(event=>audio.addEventListener(event,()=>{cancelAnimationFrame(animation);updatePlayback()}));
+  audio.addEventListener('error',()=>{seek.disabled=true;cancelAnimationFrame(animation);const error=document.getElementById('playback-error');error.hidden=false;error.textContent='Audio could not be loaded. Keep playback.m4a in the same folder as this HTML report.';});
+  seek.addEventListener('input',()=>seekTo(Number(seek.value)));
+  audio.src='playback.m4a';updatePlayback();
+}
 render();
 </script></body></html>
