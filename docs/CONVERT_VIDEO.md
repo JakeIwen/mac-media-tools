@@ -20,19 +20,10 @@ button. No direct BTT database edits. `--inspect` reports the installed state.
 The agent's sandbox cannot connect to BTT's AppleEvents interface, so installation
 and actual desktop picker behavior must be checked in your Terminal session.
 
-To align the three Tools action buttons with the parent Tools button and place
-Convert Video between Performance Audio and Strip Metadata:
-
-```sh
-/usr/bin/osascript -l JavaScript ~/dev/scripts/macbook/bettertouchtool/fix_tools_menu.js --apply
-```
-
-This reads the live parent height/font (currently 40 px / 25 pt), uses single-line
-labels with enough width, and puts Back first. It backs up the complete Media
-export before changing only Tools sizing/text/order. Existing actions, colors,
-other menus, and the disabled legacy submenu are preserved. `--inspect` previews
-the planned changes without applying them; rerunning an already-matching menu is
-a no-op.
+The old three-button Tools alignment repair is now historical; the Tools menu
+has since gained more actions. It is documented under
+[BTT one-off fixes](../bettertouchtool/one_off_fixes/README.md), not recommended
+as a routine setup step. Current installers share `tools_menu_style.py` defaults.
 
 ## Use
 
