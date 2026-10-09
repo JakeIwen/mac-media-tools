@@ -20,10 +20,8 @@ button. No direct BTT database edits. `--inspect` reports the installed state.
 The agent's sandbox cannot connect to BTT's AppleEvents interface, so installation
 and actual desktop picker behavior must be checked in your Terminal session.
 
-The old three-button Tools alignment repair is now historical; the Tools menu
-has since gained more actions. It is documented under
-[BTT one-off fixes](../bettertouchtool/one_off_fixes/README.md), not recommended
-as a routine setup step. Current installers share `tools_menu_style.py` defaults.
+Current installers share `tools_menu_style.py` defaults. The old three-button
+alignment repair was specific to an earlier menu and is retained in Git history.
 
 ## Use
 
