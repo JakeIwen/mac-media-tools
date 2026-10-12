@@ -504,7 +504,6 @@ function setup() {
       : Object.keys(presets)[0];
   $("reference").value = $("base").value;
   current = clone(data.initial);
-  if (!current.audio_enabled) $("settings-panel").prepend($("video-section"));
   buildControls();
   fill();
   comparison();

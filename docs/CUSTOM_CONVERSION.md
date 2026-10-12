@@ -4,6 +4,11 @@
 selected Finder videos, with a file picker fallback. Performance Audio preset
 buttons and Convert Video now use this same confirmation screen.
 
+The editor defaults to a soft dark theme and uses the available page width. On
+wide screens, files, vertically stacked preset controls and video settings occupy
+the first row; audio and processing status share the second. Status stays in the
+normal page flow. Narrow windows stack the panels without horizontal overflow.
+
 A selected file is never processed immediately: the screen shows its name, full
 path, size, duration, HDR status and whether it came from Finder or the picker.
 Use **Choose different files** or **Remove**, then **Start processing**. Empty

@@ -9,7 +9,7 @@
   <body>
     <main>
       <h1 id="title">Custom conversion</h1>
-      <section>
+      <section id="selection-panel">
         <h2>Review selected files</h2>
         <p id="selection-origin"></p>
         <p class="note">
@@ -22,8 +22,8 @@
         <p id="library-warning" role="status"></p>
       </section>
       <fieldset id="settings-panel">
-        <section>
-          <div class="row">
+        <section id="preset-section">
+          <div class="row" id="preset-controls">
             <label>Start from preset<select id="base"></select></label
             ><button id="load">Load preset</button
             ><label>Compare with<select id="reference"></select></label
@@ -35,27 +35,6 @@
             ><button id="save">Save as new preset</button>
           </div>
           <p id="save-status" role="status"></p>
-        </section>
-        <section>
-          <h2>Audio</h2>
-          <label class="check"
-            ><input id="audio-enabled" type="checkbox" checked />Apply audio
-            effects</label
-          >
-          <p class="note">
-            EQ → input level matching → compressor → ambience + reverb → final
-            normalization. Reference markers show the selected comparison
-            preset.
-          </p>
-          <div id="audio-controls"></div>
-          <h3 id="eq-title">EQ bands</h3>
-          <div id="eq"></div>
-          <button id="add-eq">Add EQ band</button>
-          <p id="reference-eq" class="note"></p>
-          <details>
-            <summary>Compare all audio presets</summary>
-            <div class="table"><table id="comparison"></table></div>
-          </details>
         </section>
         <section id="video-section">
           <h2>Video</h2>
@@ -116,6 +95,27 @@
             copies the original video without changing pixels, resolution, frame
             rate or HDR metadata. New files are created beside the originals.
           </p>
+        </section>
+        <section id="audio-section">
+          <h2>Audio</h2>
+          <label class="check"
+            ><input id="audio-enabled" type="checkbox" checked />Apply audio
+            effects</label
+          >
+          <p class="note">
+            EQ → input level matching → compressor → ambience + reverb → final
+            normalization. Reference markers show the selected comparison
+            preset.
+          </p>
+          <div id="audio-controls"></div>
+          <h3 id="eq-title">EQ bands</h3>
+          <div id="eq"></div>
+          <button id="add-eq">Add EQ band</button>
+          <p id="reference-eq" class="note"></p>
+          <details>
+            <summary>Compare all audio presets</summary>
+            <div class="table"><table id="comparison"></table></div>
+          </details>
         </section>
       </fieldset>
       <section id="processing-panel">
