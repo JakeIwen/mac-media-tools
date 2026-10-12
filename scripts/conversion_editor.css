@@ -1,6 +1,31 @@
 * {
   box-sizing: border-box;
 }
+fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+#files li {
+  margin-bottom: 12px;
+}
+#files button {
+  margin-left: 12px;
+}
+#job-log {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 12px;
+}
+#processing-panel {
+  position: sticky;
+  bottom: 8px;
+  box-shadow: 0 2px 16px #1e293b15;
+}
+#cancel {
+  color: #a52a24;
+}
 body {
   margin: 0;
   background: #f3f5f8;

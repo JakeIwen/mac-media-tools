@@ -8,105 +8,129 @@
   </head>
   <body>
     <main>
-      <h1>Custom conversion</h1>
-      <ul id="files"></ul>
+      <h1 id="title">Custom conversion</h1>
       <section>
-        <div class="row">
-          <label>Start from preset<select id="base"></select></label
-          ><button id="load">Load preset</button
-          ><label>Compare with<select id="reference"></select></label
-          ><label
-            >Save name<input id="name" maxlength="100" value="Custom" /></label
-          ><button id="save">Save as new preset</button>
-        </div>
-        <p id="save-status" role="status"></p>
-      </section>
-      <section>
-        <h2>Audio</h2>
-        <label class="check"
-          ><input id="audio-enabled" type="checkbox" checked />Apply audio
-          effects</label
-        >
+        <h2>Review selected files</h2>
+        <p id="selection-origin"></p>
         <p class="note">
-          EQ → input level matching → compressor → ambience + reverb → final
-          normalization. Reference markers show the selected comparison preset.
+          Nothing starts automatically. Check the filenames, size and duration
+          below, or choose different files. Results will be saved beside each
+          original.
         </p>
-        <div id="audio-controls"></div>
-        <h3>EQ bands</h3>
-        <div id="eq"></div>
-        <button id="add-eq">Add EQ band</button>
-        <p id="reference-eq" class="note"></p>
-        <details>
-          <summary>Compare all audio presets</summary>
-          <div class="table"><table id="comparison"></table></div>
-        </details>
+        <ul id="files"></ul>
+        <button id="choose">Choose different files…</button>
+        <p id="library-warning" role="status"></p>
       </section>
-      <section>
-        <h2>Video</h2>
-        <div class="row">
-          <label>Video filters<select id="video-mode"></select></label
-          ><label
-            >Resolution<select id="resolution">
-              <option value="original">Unchanged</option>
-              <option>1080p</option>
-              <option>720p</option>
-              <option>540p</option>
-            </select></label
-          ><label id="tone-label"
-            >HDR → SDR mapping<select id="tone-map"></select
-          ></label>
-        </div>
-        <p class="note" id="video-note"></p>
-        <div id="picture">
-          <label
-            >Brightness<input
-              id="brightness"
-              type="range"
-              min="-.25"
-              max=".25"
-              step=".01"
-              value="0"
-            /><output id="brightness-value">0</output></label
-          ><label
-            >Contrast<input
-              id="contrast"
-              type="range"
-              min=".5"
-              max="1.5"
-              step=".01"
-              value="1"
-            /><output id="contrast-value">1</output></label
-          ><label
-            >Saturation<input
-              id="saturation"
-              type="range"
-              min="0"
-              max="2"
-              step=".01"
-              value="1"
-            /><output id="saturation-value">1</output></label
+      <fieldset id="settings-panel">
+        <section>
+          <div class="row">
+            <label>Start from preset<select id="base"></select></label
+            ><button id="load">Load preset</button
+            ><label>Compare with<select id="reference"></select></label
+            ><label
+              >Save name<input
+                id="name"
+                maxlength="100"
+                value="Custom" /></label
+            ><button id="save">Save as new preset</button>
+          </div>
+          <p id="save-status" role="status"></p>
+        </section>
+        <section>
+          <h2>Audio</h2>
+          <label class="check"
+            ><input id="audio-enabled" type="checkbox" checked />Apply audio
+            effects</label
           >
-        </div>
-        <label id="encoding-label"
-          >Processed audio format<select id="share">
-            <option value="false">
-              Lossless — PCM MOV / ALAC MP4 for Dolby Vision
-            </option>
-            <option value="true">AAC 320 kb/s MP4</option>
-          </select></label
-        >
-        <p class="note">
-          SDR sharing uses H.264/AAC MP4 and may change HDR appearance. None
-          copies the original video without changing pixels, resolution, frame
-          rate or HDR metadata. New files are created beside the originals.
-        </p>
-      </section>
-      <section>
+          <p class="note">
+            EQ → input level matching → compressor → ambience + reverb → final
+            normalization. Reference markers show the selected comparison
+            preset.
+          </p>
+          <div id="audio-controls"></div>
+          <h3 id="eq-title">EQ bands</h3>
+          <div id="eq"></div>
+          <button id="add-eq">Add EQ band</button>
+          <p id="reference-eq" class="note"></p>
+          <details>
+            <summary>Compare all audio presets</summary>
+            <div class="table"><table id="comparison"></table></div>
+          </details>
+        </section>
+        <section id="video-section">
+          <h2>Video</h2>
+          <div class="row">
+            <label>Video filters<select id="video-mode"></select></label
+            ><label
+              >Resolution<select id="resolution">
+                <option value="original">Unchanged</option>
+                <option>1080p</option>
+                <option>720p</option>
+                <option>540p</option>
+              </select></label
+            ><label id="tone-label"
+              >HDR → SDR mapping<select id="tone-map"></select
+            ></label>
+          </div>
+          <p class="note" id="video-note"></p>
+          <div id="picture">
+            <label
+              >Brightness<input
+                id="brightness"
+                type="range"
+                min="-.25"
+                max=".25"
+                step=".01"
+                value="0"
+              /><output id="brightness-value">0</output></label
+            ><label
+              >Contrast<input
+                id="contrast"
+                type="range"
+                min=".5"
+                max="1.5"
+                step=".01"
+                value="1"
+              /><output id="contrast-value">1</output></label
+            ><label
+              >Saturation<input
+                id="saturation"
+                type="range"
+                min="0"
+                max="2"
+                step=".01"
+                value="1"
+              /><output id="saturation-value">1</output></label
+            >
+          </div>
+          <label id="encoding-label"
+            >Processed audio format<select id="share">
+              <option value="false">
+                Lossless — PCM MOV / ALAC MP4 for Dolby Vision
+              </option>
+              <option value="true">AAC 320 kb/s MP4</option>
+            </select></label
+          >
+          <p class="note">
+            SDR sharing uses H.264/AAC MP4 and may change HDR appearance. None
+            copies the original video without changing pixels, resolution, frame
+            rate or HDR metadata. New files are created beside the originals.
+          </p>
+        </section>
+      </fieldset>
+      <section id="processing-panel">
+        <h2 id="processing-title">Ready to process</h2>
         <div class="row">
-          <button id="convert" class="primary">Convert selected files</button
-          ><button id="close">Close editor session</button>
+          <button id="convert" class="primary">Start processing</button>
+          <button id="cancel" disabled>Cancel processing</button>
+          <button id="close">Close editor session</button>
         </div>
         <p id="status" role="status"></p>
+        <p id="progress-detail" class="note"></p>
+        <details>
+          <summary>Processing details</summary>
+          <pre id="job-log"></pre>
+        </details>
         <ul id="outputs"></ul>
       </section>
     </main>

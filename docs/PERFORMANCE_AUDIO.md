@@ -156,6 +156,14 @@ menu's preset buttons process selected `.mov`, `.mp4`, or `.m4v` files; when
 there are none selected, a file picker opens. **Choose files** always opens a
 picker and uses the default preset. Other buttons open the settings and job logs.
 
+Preset selection now opens a confirmation editor before processing. It shows the
+exact files, their size/duration and the selection source. Use **Choose different
+files** or **Remove** if necessary, then **Start processing**. The same window
+shows the current file, processing stage and elapsed time, with **Cancel processing**.
+Finished outputs remain available after cancellation. Direct CLI calls with explicit
+file paths remain suitable for unattended use unless selection/interactive flags
+request the editor.
+
 On first use, macOS may ask the app hosting the script for permission to access
 Finder. The OS permission dialog has no supported CLI approval route. If Finder
 access is denied, use **Choose files** or pass explicit video paths to the CLI.

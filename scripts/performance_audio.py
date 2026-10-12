@@ -9,6 +9,7 @@ import os
 from pathlib import Path
 import shlex
 import shutil
+import signal
 import subprocess
 import sys
 import tempfile
@@ -119,7 +120,7 @@ def move_no_replace(source, destination):
         source.unlink()
 
 
-def publish(args, destination, validate=None, numbered=False, preserve_completed=False):
+def publish(args, destination, validate=None, numbered=False, preserve_completed=False, on_published=None):
     """Write privately, validate, then publish with atomic no-clobber semantics."""
     destination = destination.absolute()
     if not destination.parent.is_dir():
@@ -131,11 +132,15 @@ def publish(args, destination, validate=None, numbered=False, preserve_completed
     os.close(fd)
     temp = Path(temporary)
     keep_temp = False
+    previous_mask = None
     try:
         run([tool("ffmpeg"), "-hide_banner", "-loglevel", "error", "-nostdin",
              "-y", *args, temp])
         if validate:
             validate(probe(temp))
+        if on_published is not None:
+            # A cancelled worker must record a visible output before handling SIGINT.
+            previous_mask = signal.pthread_sigmask(signal.SIG_BLOCK, {signal.SIGINT, signal.SIGTERM})
         candidate, number = destination, 2
         while True:
             try:
@@ -153,10 +158,19 @@ def publish(args, destination, validate=None, numbered=False, preserve_completed
                     raise Error(f"Processing completed, but saving as {candidate} failed: {error}.\n"
                                 f"The validated video is retained at: {temp}") from error
                 raise
+        if on_published is not None:
+            try:
+                on_published(candidate)
+            except OSError as error:
+                raise Error(f"Video saved at {candidate}, but recording its job status failed: {error}") from error
         return candidate
     finally:
-        if not keep_temp:
-            temp.unlink(missing_ok=True)
+        try:
+            if not keep_temp:
+                temp.unlink(missing_ok=True)
+        finally:
+            if previous_mask is not None:
+                signal.pthread_sigmask(signal.SIG_SETMASK, previous_mask)
 
 
 def mov_options():
@@ -205,7 +219,7 @@ def lossless_codec(audio):
 
 
 def replace(video, audio, output=None, share=False, tolerance=0.25,
-            allow_mismatch=False, numbered=False, audio_filter=None):
+            allow_mismatch=False, numbered=False, audio_filter=None, on_published=None):
     before_video, before_audio = fingerprint(video), fingerprint(audio)
     info, audio_info = probe(video), probe(audio)
     v, a = stream(info, "video"), stream(audio_info, "audio")
@@ -242,7 +256,7 @@ def replace(video, audio, output=None, share=False, tolerance=0.25,
                     "-map", f"0:{v['index']}",
                     "-map", f"1:{a['index']}", "-c:v", "copy", *encoding,
                     *mov_options()], destination, validate, numbered or output is None,
-                   preserve_completed=True)
+                   preserve_completed=True, on_published=on_published)
 
 
 def write_launchers(project):

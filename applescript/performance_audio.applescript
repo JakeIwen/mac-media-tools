@@ -67,16 +67,12 @@ on processFiles(selectedFiles)
     if choices is false then return
     set selectedLabel to item 1 of choices
     set presetName to text 1 thru ((offset of ":" in selectedLabel) - 1) of selectedLabel
-    set commandText to my engineCommand() & " process --background --notify --reveal --preset " & quoted form of presetName & my presetConfig()
-    if (count of selectedFiles) is 0 then
-        set commandText to commandText & " --choose"
-    else
-        repeat with selectedFile in selectedFiles
-            set commandText to commandText & " " & quoted form of (POSIX path of selectedFile)
-        end repeat
-    end if
+    set commandText to my engineCommand() & " process --choose --background --notify --reveal --preset " & quoted form of presetName & my presetConfig()
+    repeat with selectedFile in selectedFiles
+        set commandText to commandText & " " & quoted form of (POSIX path of selectedFile)
+    end repeat
     set resultText to do shell script commandText
-    display notification "Processing in the background. The finished video will appear in Finder." with title "Performance Audio"
+    display notification "Review the selected files in the opened window, then click Start processing." with title "Performance Audio"
 end processFiles
 
 on prepareFiles(selectedFiles)

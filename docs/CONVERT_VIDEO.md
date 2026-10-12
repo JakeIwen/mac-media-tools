@@ -6,8 +6,8 @@ This version outputs MP4; FFmpeg handles MOV, MP4, and other supported input fil
 
 ## Install the button
 
-The converter is already bundled with the local Performance Audio app (version
-1.6), including FFmpeg. Run in your normal Terminal:
+The converter is bundled with the local Performance Audio app, including FFmpeg.
+Run in your normal Terminal:
 
 ```sh
 /usr/bin/python3 ~/dev/scripts/macbook/bettertouchtool/install_convert_video_menu.py --apply
@@ -26,7 +26,10 @@ alignment repair was specific to an earlier menu and is retained in Git history.
 ## Use
 
 Select video files in Finder, then click **Tools → Convert Video**. If no MOV/MP4/M4V
-files are selected, a file picker opens. Choose:
+files are selected, a file picker opens. The confirmation screen identifies
+Finder versus picker selection and lists names, full paths, sizes and durations.
+Remove unwanted files or choose different files before **Start processing**.
+Choose:
 
 | Resolution | Landscape limit | Portrait limit |
 | --- | --- | --- |
@@ -40,9 +43,15 @@ pixel rounding. It is never cropped or upscaled. Square/non-16:9 clips keep thei
 shape. "Original" means unchanged display resolution, not necessarily unchanged
 encoding. Anamorphic pixels are normalized to square pixels if video is encoded.
 
-Conversion runs in the background and reveals completed files in Finder. Output
+The screen shows the current file, stage and elapsed time, with a **Cancel processing**
+button. Finished files remain listed with **Show in Finder**, including files completed
+before cancellation. BPM and Rhythm Practice are unaffected by this confirmation flow.
+Output
 names are `name-mp4-1080p.mp4`, etc. Existing results get numbered suffixes. Originals
-remain untouched. The log says whether each stream was copied or encoded.
+remain untouched. The detail log says whether each stream was copied or encoded.
+The shared editor also offers explicit video preservation and optional audio controls;
+Convert Video starts with audio effects off and SDR sharing selected. See
+[Custom conversion](CUSTOM_CONVERSION.md).
 
 Open the job logs if a conversion fails:
 

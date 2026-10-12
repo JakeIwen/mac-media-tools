@@ -26,6 +26,8 @@ class VideoSettings:
     def parse(cls, value):
         if not isinstance(value, dict) or set(value) != set(asdict(cls())):
             raise media.Error("Invalid video settings.")
+        if not isinstance(value['mode'], str) or not isinstance(value['tone_map'], str):
+            raise media.Error("Video filter and tone mapping must be named choices.")
         if value['mode'] not in VIDEO_MODES or value['tone_map'] not in TONE_MAPS:
             raise media.Error("Unknown video filter or tone mapping.")
         if value['resolution'] not in ('original', '1080p', '720p', '540p'):

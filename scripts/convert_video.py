@@ -149,7 +149,7 @@ def validate_conversion(before, plan, result):
             raise media.Error("Conversion changed audio/video synchronization unexpectedly.")
 
 
-def convert(source, resolution="1080p", output_dir=None, audio_track=0, plan_only=False, video_options=None):
+def convert(source, resolution="1080p", output_dir=None, audio_track=0, plan_only=False, video_options=None, on_published=None):
     source = source.expanduser().resolve()
     before_stat = media.fingerprint(source)
     info = media.probe(source)
@@ -182,7 +182,7 @@ def convert(source, resolution="1080p", output_dir=None, audio_track=0, plan_onl
         if media.fingerprint(source) != before_stat:
             raise media.Error("Input changed during conversion; no final output published.")
 
-    result = media.publish(args, destination, validate, numbered=True, preserve_completed=True)
+    result = media.publish(args, destination, validate, numbered=True, preserve_completed=True, on_published=on_published)
     print(f"Created: {result}", flush=True)
     return result
 
@@ -204,6 +204,9 @@ JSON.stringify(answer ? ['original','1080p','720p','540p'][choices.indexOf(answe
 
 
 def run(args):
+    if not args.plan and (args.interactive or args.finder_selection or args.choose):
+        from conversion_editor import launch_for_tool
+        return launch_for_tool('video', args)
     if args.background:
         directory = Path(__file__).resolve().parent
         app = next((p for p in directory.parents if p.suffix == ".app"), None)

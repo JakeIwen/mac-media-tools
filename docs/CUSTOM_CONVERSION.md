@@ -1,15 +1,28 @@
 # Custom conversion
 
 **Tools → Performance Audio → Custom conversion…** opens an editor for the
-selected Finder videos, with a file picker fallback. Existing preset buttons keep
-their one-click behavior.
+selected Finder videos, with a file picker fallback. Performance Audio preset
+buttons and Convert Video now use this same confirmation screen.
+
+A selected file is never processed immediately: the screen shows its name, full
+path, size, duration, HDR status and whether it came from Finder or the picker.
+Use **Choose different files** or **Remove**, then **Start processing**. Empty
+selections cannot start. Selection revisions and file fingerprints are checked
+again when starting so a stale tab cannot process a different selection silently.
+
+While processing, the screen shows the current file, stage, elapsed time and a
+bounded detail log. **Cancel processing** stops only that job's owned process group,
+allowing cleanup before escalating if necessary. Files completed before cancellation
+remain listed. Close and file-selection changes are disabled until the job stops.
+There is no percentage/ETA estimate for the multi-pass effects pipeline.
+The original recording is never changed. BPM and Rhythm Practice are unchanged.
 
 Load a preset to use as a starting point. Audio sliders show a second preset's
 values as amber reference markers; a comparison table lists all presets. Bell EQ
 bands are editable by frequency, gain and Q. Input matching, compressor, ambience,
 reverb and final normalization reuse the existing audio engine and measurements.
 
-**Convert selected files** applies the current settings once. **Save as new preset**
+**Start processing** applies the current settings once. **Save as new preset**
 stores audio and video settings together for future editor sessions, without
 overwriting built-in presets. Saved presets appear in the editor's preset lists;
 they do not each create another BTT menu item. The `.conversion.json` sidecar
@@ -37,7 +50,8 @@ existing Jake Preferred button on Dolby Vision recordings.
 
 The editor is a per-conversion loopback HTTP session, not an always-on service.
 It opens in the default browser and exits after **Close editor session** or 30
-minutes without requests when idle. Job threads finish before process exit.
+minutes without requests when idle. A foreground worker runs each batch; closing
+is refused while it runs. Cancellation remains active until owned children stop.
 Mutations require an unpredictable session token and same-origin checks. Browser
 refresh retains the session in sessionStorage. No uploads or external resources.
 
@@ -48,9 +62,16 @@ Implementation: `conversion_settings.py` is the canonical settings contract;
 Logs live under `macbook/build/conversion-editor-jobs/`. Render intermediates
 remain in each job folder for diagnosing failures.
 
+Preset and progress files are atomically published by `conversion_storage.py`.
+Malformed saved presets produce a warning without disabling the rest of the
+library. A recipe-write failure does not hide a completed video. The shared media
+publisher defers SIGINT/SIGTERM over the short rename/status-record boundary so
+cancellation cannot hide an already published output from the job manifest.
+
 `install_custom_conversion.py --apply` adds only the editor entry to the existing
-Performance Audio dropdown, matches its live font/height, grows fixed-height
-menus by one row, and verifies all existing entries/actions remain unchanged.
+Performance Audio dropdown, matches its live font/height, ensures fixed-height
+menus fit their content, and verifies all existing entries/actions remain unchanged.
+Retries reconcile partial item/layout installs without duplicate rows or repeated growth.
 It reuses `btt_common.js` for private verified backups and canonical comparisons.
 Do not use the older full-menu installer merely to add this entry.
 

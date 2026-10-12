@@ -359,7 +359,7 @@ def source_audio_filters(info, preset, rate, audio_track):
 
 
 def process(video, preset_name=None, config=None, share=False, audio_track=0,
-            reverb=None, ambience=None, output_dir=None):
+            reverb=None, ambience=None, output_dir=None, on_published=None):
     name, preset = selected_preset(preset_name, config, reverb, ambience)
     video = video.resolve()
     before = pa.fingerprint(video)
@@ -415,7 +415,7 @@ def process(video, preset_name=None, config=None, share=False, audio_track=0,
         suffix = pa.replacement_suffix(info, share)
         output = (output_dir or video.parent) / f"{video.stem}-{name}{suffix}"
         result = pa.replace(video, processed, output, share=share, numbered=True,
-                            audio_filter=f"volume={gain:.8f}dB")
+                            audio_filter=f"volume={gain:.8f}dB", on_published=on_published)
         report = {"version": 3, "source": str(video), "output": str(result),
                   "preset_name": name, "settings": preset,
                   "sample_rate": rate, "channels": a["channels"], "duration_seconds": length,
@@ -438,24 +438,8 @@ def process(video, preset_name=None, config=None, share=False, audio_track=0,
 
 
 def select_videos(use_finder=False):
-    # JSON avoids ambiguous newline/tab delimiters in actual file names.
-    script = '''ObjC.import('Foundation');
-const app = Application.currentApplication(); app.includeStandardAdditions = true;
-let paths = [];
-if (USE_FINDER) {
-  const finder = Application('com.apple.finder');
-  if (finder.running()) paths = finder.selection().map(f =>
-    ObjC.unwrap($.NSURL.URLWithString(f.url()).path));
-  paths = paths.filter(p => /\\.(mov|mp4|m4v)$/i.test(p));
-}
-if (!paths.length) {
-  try {
-    paths = app.chooseFile({withPrompt:'Choose performance videos',
-      ofType:['public.movie'], multipleSelectionsAllowed:true}).map(p=>p.toString());
-  } catch (e) { if (e.errorNumber === -128) paths = []; else throw e; }
-}
-JSON.stringify(paths);'''.replace("USE_FINDER", "true" if use_finder else "false")
-    return [Path(p) for p in json.loads(pa.run(["/usr/bin/osascript", "-l", "JavaScript", "-e", script]))]
+    from media_selection import select_media
+    return list(select_media(use_finder).files)
 
 
 def notify(message):
@@ -468,6 +452,9 @@ def notify(message):
 
 def run_process(args):
     load_presets(args.config)  # Fail before opening a picker or starting a job.
+    if args.finder_selection or args.choose:
+        from conversion_editor import launch_for_tool
+        return launch_for_tool('audio', args)
     if args.background:
         script_dir = Path(__file__).resolve().parent
         app = next((p for p in script_dir.parents if p.suffix == ".app"), None)

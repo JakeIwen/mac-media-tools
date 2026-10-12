@@ -7,7 +7,9 @@ let data,
   presets,
   current,
   closed = false,
-  running = false;
+  latestJob,
+  selectionBusy = false,
+  cancelPending = false;
 const labels = {
   highpass_hz: "Low cut (Hz)",
   compressor_ratio: "Compression ratio",
@@ -209,6 +211,14 @@ function audioEnabled() {
     $("field-" + key).disabled = $("number-" + key).disabled =
       !current.audio_enabled;
   eq();
+  for (const id of [
+    "audio-controls",
+    "eq",
+    "eq-title",
+    "add-eq",
+    "reference-eq",
+  ])
+    $(id).hidden = !current.audio_enabled;
   video();
 }
 function settings() {
@@ -218,19 +228,111 @@ function settings() {
     value.video.mode === "none" ? $("share").value === "true" : true;
   return value;
 }
-function job(state) {
-  running = state.running;
-  $("convert").disabled = running;
-  $("close").disabled = running;
-  $("status").textContent = running
-    ? "Converting… You can leave this page open."
-    : state.errors.length
-      ? state.errors.join("\n")
-      : state.outputs.length
-        ? "Conversion complete. Originals are unchanged."
-        : "";
+function formatSize(bytes) {
+  if (!Number.isFinite(bytes)) return "Unknown size";
+  const units = ["bytes", "KB", "MB", "GB"];
+  let value = bytes,
+    unit = 0;
+  while (value >= 1000 && unit < units.length - 1) {
+    value /= 1000;
+    unit += 1;
+  }
+  return `${value.toFixed(unit ? 1 : 0)} ${units[unit]}`;
+}
+function formatDuration(seconds) {
+  if (!Number.isFinite(seconds)) return "Unknown duration";
+  const rounded = Math.round(seconds),
+    minutes = Math.floor(rounded / 60),
+    remainder = rounded % 60;
+  return `${minutes}:${String(remainder).padStart(2, "0")}`;
+}
+function selectionOrigin(origin) {
+  const origins = {
+    "Finder selection": "Selected in Finder",
+    "File picker": "Selected with Choose different files",
+    "Provided file paths": "Opened with provided file paths",
+  };
+  return origins[origin] || origin || "Selected files";
+}
+function fileName(path) {
+  return path ? path.split(/[\\/]/).pop() : "";
+}
+function renderSelection() {
+  document.title = `${data.title} — ${data.files[0]?.name || "No files selected"}`;
+  $("selection-origin").textContent = selectionOrigin(data.selection_origin);
+  $("files").replaceChildren();
+  data.files.forEach((file, index) => {
+    const item = document.createElement("li"),
+      details = [
+        formatSize(file.size_bytes),
+        formatDuration(file.duration_seconds),
+      ];
+    if (file.hdr) details.push("HDR");
+    item.append(
+      text("strong", file.name),
+      text("span", ` — ${details.join(" · ")}`),
+      text("div", file.path),
+    );
+    const remove = text("button", "Remove");
+    remove.disabled = latestJob?.task.running || selectionBusy;
+    remove.onclick = () => changeSelection("/remove", { index });
+    item.append(remove);
+    $("files").append(item);
+  });
+  $("library-warning").textContent = (data.warnings || []).join("\n");
+}
+function statusMessage(task, progress) {
+  if (cancelPending || task.state === data.task_states.CANCELLING)
+    return task.errors.length
+      ? "Cancellation needs attention. You can retry Cancel.\n" +
+          task.errors.join("\n")
+      : "Cancelling… Cleanup may take a moment.";
+  if (task.state === data.task_states.RUNNING)
+    return "Processing… You can leave this page open.";
+  if (task.state === data.task_states.CANCELLED)
+    return (
+      "Processing cancelled. Completed outputs are retained." +
+      (task.errors.length ? "\n" + task.errors.join("\n") : "")
+    );
+  if (task.errors.length) return task.errors.join("\n");
+  if (task.state === data.task_states.SUCCEEDED)
+    return "Processing complete. Originals are unchanged.";
+  if (task.state === data.task_states.FAILED) return "Processing failed.";
+  return "Review the files and settings, then start processing.";
+}
+function renderJob(job) {
+  latestJob = job;
+  const task = job.task,
+    progress = job.progress,
+    running = task.running,
+    outputs = progress.outputs.length ? progress.outputs : task.outputs;
+  $("settings-panel").disabled = running;
+  $("choose").disabled = running || selectionBusy;
+  $("convert").disabled = running || selectionBusy || !data.files.length;
+  $("cancel").disabled = !running || cancelPending;
+  $("close").disabled = running || selectionBusy;
+  $("processing-title").textContent = running
+    ? cancelPending || task.state === data.task_states.CANCELLING
+      ? "Cancelling processing"
+      : "Processing files"
+    : "Ready to process";
+  $("status").textContent = statusMessage(task, progress);
+  const position = progress.total
+      ? `File ${Math.min(progress.index || 1, progress.total)} of ${progress.total}`
+      : "",
+    elapsed = task.elapsed ? `${Math.round(task.elapsed)} seconds elapsed` : "";
+  $("progress-detail").textContent = [
+    position,
+    fileName(progress.current_file || task.current_file),
+    elapsed,
+    task.stage,
+    ...progress.warnings,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+  $("job-log").textContent = task.detail.join("\n");
   $("outputs").replaceChildren();
-  state.outputs.forEach((path, index) => {
+  outputs.forEach((path, index) => {
     const li = text("li", path),
       button = text("button", "Show in Finder");
     button.onclick = () =>
@@ -240,32 +342,100 @@ function job(state) {
     li.append(button);
     $("outputs").append(li);
   });
+  renderSelection();
+}
+function applySnapshot(snapshot) {
+  if (data && snapshot.selection_revision < data.selection_revision) {
+    snapshot = {
+      ...snapshot,
+      files: data.files,
+      selection_origin: data.selection_origin,
+      selection_revision: data.selection_revision,
+      warnings: data.warnings,
+    };
+  }
+  data = snapshot;
+  presets = snapshot.presets;
+  renderJob(snapshot.job);
+}
+async function changeSelection(path, body) {
+  if (latestJob?.task.running || selectionBusy) return;
+  selectionBusy = true;
+  renderJob(latestJob);
+  try {
+    applySnapshot(await api(path, body));
+  } catch (error) {
+    $("library-warning").textContent = error.message;
+  } finally {
+    selectionBusy = false;
+    renderJob(latestJob);
+  }
 }
 async function poll() {
   if (closed) return;
   try {
-    const state = await api("/state");
-    job(state.job);
+    applySnapshot(await api("/state"));
   } catch (error) {
     $("status").textContent = error.message;
   }
   if (!closed) setTimeout(poll, 2000);
 }
-function setup() {
-  presets = data.presets;
-  presetOptions();
-  options($("video-mode"), data.video_modes);
-  options($("tone-map"), data.tone_maps);
-  $("base").value = presets["jake-preferred"]
-    ? "jake-preferred"
-    : Object.keys(presets)[0];
-  $("reference").value = $("base").value;
-  current = clone(presets[$("base").value]);
-  current.video = clone(data.video_default);
-  buildControls();
-  fill();
-  comparison();
-  for (const path of data.files) $("files").append(text("li", path));
+async function savePreset() {
+  try {
+    const value = settings(),
+      saved = await api("/save", value);
+    presets[saved.id] = value;
+    presetOptions();
+    comparison();
+    reference();
+    $("save-status").textContent =
+      "Saved. Available here and next time you open Custom conversion.";
+  } catch (error) {
+    $("save-status").textContent = error.message;
+  }
+}
+async function startConversion() {
+  if (latestJob.task.running || !data.files.length) return;
+  try {
+    $("convert").disabled = true;
+    await api("/convert", {
+      settings: settings(),
+      selection_revision: data.selection_revision,
+    });
+    applySnapshot(await api("/state"));
+  } catch (error) {
+    applySnapshot(await api("/state").catch(() => data));
+    $("status").textContent = error.message;
+  }
+}
+async function cancelConversion() {
+  if (!latestJob.task.running || cancelPending) return;
+  cancelPending = true;
+  renderJob(latestJob);
+  let requestError;
+  try {
+    await api("/cancel", { job_id: latestJob.job_id });
+    applySnapshot(await api("/state"));
+  } catch (error) {
+    requestError = error.message;
+  } finally {
+    cancelPending = false;
+    renderJob(latestJob);
+    if (requestError) $("status").textContent = requestError;
+  }
+}
+async function closeEditor() {
+  try {
+    await api("/close", {});
+    closed = true;
+    $("status").textContent = "Session closed. You can close this tab.";
+    for (const button of document.querySelectorAll("button"))
+      button.disabled = true;
+  } catch (error) {
+    $("status").textContent = error.message;
+  }
+}
+function bindControls() {
   $("load").onclick = () => {
     current = clone(presets[$("base").value]);
     fill();
@@ -287,43 +457,36 @@ function setup() {
       current.video[key] = Number($(key).value);
       $(key + "-value").textContent = $(key).value;
     };
-  $("save").onclick = async () => {
-    try {
-      const value = settings(),
-        saved = await api("/save", value);
-      presets[saved.id] = value;
-      presetOptions();
-      comparison();
-      reference();
-      $("save-status").textContent =
-        "Saved. Available here and next time you open Custom conversion.";
-    } catch (error) {
-      $("save-status").textContent = error.message;
-    }
-  };
-  $("convert").onclick = async () => {
-    if (running) return;
-    try {
-      $("convert").disabled = true;
-      await api("/convert", settings());
-      job({ running: true, outputs: [], errors: [] });
-    } catch (error) {
-      $("status").textContent = error.message;
-      $("convert").disabled = false;
-    }
-  };
-  $("close").onclick = async () => {
-    try {
-      await api("/close", {});
-      closed = true;
-      $("status").textContent = "Session closed. You can close this tab.";
-      for (const button of document.querySelectorAll("button"))
-        button.disabled = true;
-    } catch (error) {
-      $("status").textContent = error.message;
-    }
-  };
-  job(data.job);
+  $("save").onclick = savePreset;
+  $("choose").onclick = () => changeSelection("/choose", {});
+  $("convert").onclick = startConversion;
+  $("cancel").onclick = cancelConversion;
+  $("close").onclick = closeEditor;
+}
+function setup() {
+  presets = data.presets;
+  $("title").textContent = data.title;
+  presetOptions();
+  options($("video-mode"), data.video_modes);
+  options($("tone-map"), data.tone_maps);
+  const initialPreset = Object.entries(presets).find(
+    ([, preset]) =>
+      JSON.stringify(preset.audio) === JSON.stringify(data.initial.audio),
+  );
+  $("base").value = initialPreset
+    ? initialPreset[0]
+    : presets["jake-preferred"]
+      ? "jake-preferred"
+      : Object.keys(presets)[0];
+  $("reference").value = $("base").value;
+  current = clone(data.initial);
+  if (!current.audio_enabled) $("settings-panel").prepend($("video-section"));
+  buildControls();
+  fill();
+  comparison();
+  renderSelection();
+  bindControls();
+  renderJob(data.job);
   setTimeout(poll, 2000);
 }
 api("/state")
