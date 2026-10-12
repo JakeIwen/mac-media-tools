@@ -91,7 +91,7 @@ def make_plan(info, resolution, audio_track=0):
                              else "encode AAC-LC 320 kb/s, 48 kHz (one lossy conversion)")}
 
 
-def video_filters(plan):
+def video_filters(plan, options=None):
     video = plan["video"]
     filters = []
     if video.get("field_order") not in (None, "unknown", "progressive"):
@@ -104,8 +104,9 @@ def video_filters(plan):
         matrix = video.get("color_space")
         if primaries in (None, "unknown"): primaries = "bt2020"
         if matrix in (None, "unknown"): matrix = "bt2020nc"
+        tone_map = options.tone_map if options else "mobius"
         filters += [f"zscale=pin={primaries}:min={matrix}:tin={video['color_transfer']}:t=linear:npl=100",
-                    "format=gbrpf32le", "zscale=p=bt709", "tonemap=tonemap=mobius:param=0.3:desat=2",
+                    "format=gbrpf32le", "zscale=p=bt709", f"tonemap=tonemap={tone_map}:param=0.3:desat=2",
                     "zscale=t=bt709:m=bt709:r=tv", "sidedata=mode=delete"]
     elif video.get("color_primaries") not in (None, "unknown", "bt709"):
         # Tagged wide-gamut SDR needs a real conversion, not just new color tags.
@@ -114,6 +115,8 @@ def video_filters(plan):
         filters.append("scale=in_color_matrix=auto:out_color_matrix=bt709:out_range=tv")
     # Use a timestamp-aware fps filter, not output CFR padding that would invent
     # leading frames when the video starts later than its audio.
+    if options and options.mode == "adjust":
+        filters.append(f"eq=brightness={options.brightness}:contrast={options.contrast}:saturation={options.saturation}")
     filters += ["format=yuv420p", "fps=30"]
     return ",".join(filters)
 
@@ -146,11 +149,13 @@ def validate_conversion(before, plan, result):
             raise media.Error("Conversion changed audio/video synchronization unexpectedly.")
 
 
-def convert(source, resolution="1080p", output_dir=None, audio_track=0, plan_only=False):
+def convert(source, resolution="1080p", output_dir=None, audio_track=0, plan_only=False, video_options=None):
     source = source.expanduser().resolve()
     before_stat = media.fingerprint(source)
     info = media.probe(source)
     plan = make_plan(info, resolution, audio_track)
+    if video_options and video_options.mode == "adjust":
+        plan.update(copy_video=False, video_action="encode H.264 SDR with picture adjustments")
     print(f"{source.name}: {plan['width']} x {plan['height']}; {plan['video_action']}; {plan['audio_action']}", flush=True)
     if plan["hdr_to_sdr"]:
         print("Tone-mapping HDR to SDR for sharing.", flush=True)
@@ -162,7 +167,7 @@ def convert(source, resolution="1080p", output_dir=None, audio_track=0, plan_onl
     if plan["copy_video"]:
         args += ["-c:v", "copy"]
     else:
-        args += ["-vf", video_filters(plan), "-c:v", "libx264", "-preset", "fast",
+        args += ["-vf", video_filters(plan, video_options), "-c:v", "libx264", "-preset", "fast",
                  "-crf", "18", "-maxrate", "20M", "-bufsize", "40M",
                  "-fps_mode", "passthrough", "-g", "60", "-x264-params", "open-gop=0",
                  "-pix_fmt", "yuv420p", "-color_primaries", "bt709", "-color_trc", "bt709",

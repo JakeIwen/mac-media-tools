@@ -35,6 +35,9 @@ def main():
     shutil.copy2(macbook / "scripts" / "bpm_report_template.html", resources)
     for name in ("rhythm_practice.py", "rhythm_report_template.html", "rhythm_core.js", "rhythm_ui.js"):
         shutil.copy2(macbook / "scripts" / name, resources)
+    for name in ("conversion_settings.py", "conversion_jobs.py", "conversion_editor.py",
+                 "conversion_editor.html", "conversion_editor.css", "conversion_editor.js"):
+        shutil.copy2(macbook / "scripts" / name, resources)
     (resources / "bpm-python-path.txt").write_text(str(macbook / "build/bpm-venv/bin/python") + "\n")
     shutil.copy2(macbook / "scripts" / "performance_audio_presets.json", resources)
     # Keep user-editable presets outside the signed app bundle.
@@ -50,7 +53,7 @@ def main():
     with plist_path.open("rb") as file:
         plist = plistlib.load(file)
     plist.update(CFBundleIdentifier="com.jacobr.performance-audio",
-                 CFBundleName="Performance Audio", CFBundleShortVersionString="2.0",
+                 CFBundleName="Performance Audio", CFBundleShortVersionString="2.1",
                  NSHighResolutionCapable=True)
     with plist_path.open("wb") as file:
         plistlib.dump(plist, file)

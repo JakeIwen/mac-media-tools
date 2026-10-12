@@ -97,7 +97,11 @@ uses FFmpeg's [loudnorm measurements](https://ffmpeg.org/ffmpeg-filters.html#lou
 Automatic effects currently support mono/stereo, preserving sample rate and
 channel count. Only the selected original audio track is used (first by default).
 The video is copied unchanged. The processed audio is stored as 24-bit PCM in MOV,
-or AAC in MP4 with `--share`. AAC encoding can change measured peaks slightly.
+or lossless ALAC in MP4 for Dolby Vision sources so their HDR metadata survives.
+`--share` selects AAC MP4 instead. AAC encoding can change measured peaks slightly.
+
+For one-off settings, saved custom recipes, preset-reference markers and explicit
+video filters/None, use the [Custom conversion editor](CUSTOM_CONVERSION.md).
 
 ### BetterTouchTool floating menu
 

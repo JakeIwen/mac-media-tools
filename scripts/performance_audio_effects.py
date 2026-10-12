@@ -33,7 +33,10 @@ OPTIONAL_DEFAULTS = {"input_target_lufs": -16, "input_true_peak_db": -3,
 
 def load_presets(config=None):
     config = config or DEFAULT_CONFIG
-    data = json.loads(config.read_text())
+    return validate_presets(json.loads(config.read_text()))
+
+
+def validate_presets(data):
     if set(data) != {"default", "presets"} or not isinstance(data["presets"], dict):
         raise pa.Error("Preset config needs default and presets fields.")
     if data["default"] not in data["presets"]:
@@ -327,8 +330,7 @@ def save_report(result, report):
     return paths
 
 
-def process(video, preset_name=None, config=None, share=False, audio_track=0,
-            reverb=None, ambience=None):
+def selected_preset(preset_name, config, reverb, ambience):
     data = load_presets(config)
     name = preset_name or data["default"]
     if name not in data["presets"]:
@@ -339,14 +341,11 @@ def process(video, preset_name=None, config=None, share=False, audio_track=0,
             if not math.isfinite(value) or not 0 <= value <= 50:
                 raise pa.Error(f"--{effect} must be a percentage between 0 and 50.")
             preset[f"{effect}_mix"] = value / 100
-    video = video.resolve()
-    before = pa.fingerprint(video)
-    info = pa.probe(video)
+    return name, preset
+
+
+def source_audio_filters(info, preset, rate, audio_track):
     v, a = pa.stream(info, "video"), pa.stream(info, "audio", audio_track)
-    if a.get("channels") not in (1, 2):
-        raise pa.Error("Automatic effects support mono/stereo audio. Select a mono/stereo "
-                       "track with --audio-track; spatial/surround downmixing is not automatic.")
-    rate = int(a["sample_rate"])
     length = pa.duration(info, v)
     offset = float(a.get("start_time", 0)) - float(v.get("start_time", 0))
     filters = ["asetpts=PTS-STARTPTS", f"aresample={rate}"]
@@ -356,7 +355,22 @@ def process(video, preset_name=None, config=None, share=False, audio_track=0,
         filters += [f"atrim=start={-offset:.9f}", "asetpts=PTS-STARTPTS"]
     filters += eq_filters(preset, rate)
     # Keep processing on the video timeline, including any silent tail.
-    filters += ["apad", f"atrim=duration={length:.9f}"]
+    return filters + ["apad", f"atrim=duration={length:.9f}"]
+
+
+def process(video, preset_name=None, config=None, share=False, audio_track=0,
+            reverb=None, ambience=None, output_dir=None):
+    name, preset = selected_preset(preset_name, config, reverb, ambience)
+    video = video.resolve()
+    before = pa.fingerprint(video)
+    info = pa.probe(video)
+    v, a = pa.stream(info, "video"), pa.stream(info, "audio", audio_track)
+    if a.get("channels") not in (1, 2):
+        raise pa.Error("Automatic effects support mono/stereo audio. Select a mono/stereo "
+                       "track with --audio-track; spatial/surround downmixing is not automatic.")
+    rate = int(a["sample_rate"])
+    length = pa.duration(info, v)
+    filters = source_audio_filters(info, preset, rate, audio_track)
     print(f"{video.name}: applying {preset['label']}...", flush=True)
     with tempfile.TemporaryDirectory(prefix="performance-effects-") as temporary:
         folder = Path(temporary)
@@ -398,8 +412,8 @@ def process(video, preset_name=None, config=None, share=False, audio_track=0,
         print(f"Final normalization: {after_spatial['input_i']} LUFS, gain {gain:+.2f} dB.", flush=True)
         if pa.fingerprint(video) != before:
             raise pa.Error("Source changed during effects processing; no video was published.")
-        suffix = ".mp4" if share else ".mov"
-        output = video.with_name(f"{video.stem}-{name}{suffix}")
+        suffix = pa.replacement_suffix(info, share)
+        output = (output_dir or video.parent) / f"{video.stem}-{name}{suffix}"
         result = pa.replace(video, processed, output, share=share, numbered=True,
                             audio_filter=f"volume={gain:.8f}dB")
         report = {"version": 3, "source": str(video), "output": str(result),

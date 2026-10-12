@@ -161,7 +161,17 @@ def publish(args, destination, validate=None, numbered=False, preserve_completed
 
 def mov_options():
     return ["-map_metadata", "0", "-map_chapters", "0", "-movflags",
-            "+faststart+use_metadata_tags"]
+            "+faststart+use_metadata_tags", "-strict", "unofficial"]
+
+
+def has_dolby_vision(info):
+    return any(side.get("side_data_type") == "DOVI configuration record"
+               for side in stream(info, "video").get("side_data_list", []))
+
+
+def replacement_suffix(info, share=False):
+    # FFmpeg writes the Dolby Vision configuration box in MP4 mode, not MOV.
+    return ".mp4" if share or has_dolby_vision(info) else ".mov"
 
 
 def timed_input(path, track):
@@ -208,12 +218,13 @@ def replace(video, audio, output=None, share=False, tolerance=0.25,
             raise Error(message + "\nUse --allow-duration-mismatch only if intentional; "
                         "it keeps both tracks in full without stretching or trimming.")
         print("Warning: " + message, file=sys.stderr)
-    suffix = "-share.mp4" if share else "-finished.mov"
+    extension = replacement_suffix(info, share)
+    suffix = ("-share" if share else "-finished") + extension
     destination = output or video.with_name(video.stem + suffix)
-    if destination.suffix.lower() != (".mp4" if share else ".mov"):
-        raise Error("Use .mp4 with --share, or .mov for lossless output.")
+    if destination.suffix.lower() != extension:
+        raise Error(f"Use {extension} output for this video; Dolby Vision requires MP4 to preserve its metadata.")
     encoding = ["-c:a", "aac", "-b:a", "320k"] if share else [
-        "-c:a", "pcm_s24le" if audio_filter else lossless_codec(a)]
+        "-c:a", "alac" if extension == ".mp4" else "pcm_s24le" if audio_filter else lossless_codec(a)]
     if audio_filter:
         encoding += ["-af", audio_filter]
 
