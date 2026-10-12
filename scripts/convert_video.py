@@ -175,7 +175,8 @@ def convert(source, resolution="1080p", output_dir=None, audio_track=0, plan_onl
     if plan["audio"]:
         args += ["-c:a", "copy"] if plan["copy_audio"] else ["-c:a", "aac", "-b:a", "320k", "-ar", "48000"]
     args += ["-map_metadata", "0", "-map_chapters", "-1", "-movflags", "+faststart"]
-    destination = (output_dir.expanduser().resolve() if output_dir else source.parent) / f"{source.stem}-mp4-{resolution}.mp4"
+    extension = 'mov' if video_options and video_options.container == 'mov' else 'mp4'
+    destination = (output_dir.expanduser().resolve() if output_dir else source.parent) / f"{source.stem}-{extension}-{resolution}.{extension}"
 
     def validate(result):
         validate_conversion(info, plan, result)

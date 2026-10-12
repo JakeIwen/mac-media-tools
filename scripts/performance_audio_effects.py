@@ -345,7 +345,7 @@ def source_audio_filters(info, preset, rate, audio_track):
 
 
 def process(video, preset_name=None, config=None, share=False, audio_track=0,
-            reverb=None, ambience=None, output_dir=None, on_published=None):
+            reverb=None, ambience=None, output_dir=None, on_published=None, container='auto'):
     name, preset = selected_preset(preset_name, config, reverb, ambience)
     video = video.resolve()
     before = pa.fingerprint(video)
@@ -398,10 +398,10 @@ def process(video, preset_name=None, config=None, share=False, audio_track=0,
         print(f"Final normalization: {after_spatial['input_i']} LUFS, gain {gain:+.2f} dB.", flush=True)
         if pa.fingerprint(video) != before:
             raise pa.Error("Source changed during effects processing; no video was published.")
-        suffix = pa.replacement_suffix(info, share)
+        suffix = pa.replacement_suffix(info, share, container)
         output = (output_dir or video.parent) / f"{video.stem}-{name}{suffix}"
         result = pa.replace(video, processed, output, share=share, numbered=True,
-                            audio_filter=f"volume={gain:.8f}dB", on_published=on_published)
+                            audio_filter=f"volume={gain:.8f}dB", on_published=on_published, container=container)
         report = {"version": 3, "source": str(video), "output": str(result),
                   "preset_name": name, "settings": preset,
                   "sample_rate": rate, "channels": a["channels"], "duration_seconds": length,

@@ -119,9 +119,6 @@ section {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
-#video-section .row > label:first-child {
-  grid-column: 1 / -1;
-}
 .row {
   display: flex;
   gap: 12px;
@@ -244,6 +241,20 @@ th {
 #picture label {
   flex: 1;
 }
+.video-guidance {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 20px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid #3b4552;
+}
+.video-guidance p {
+  margin: 0;
+}
+.video-guidance strong {
+  color: var(--text);
+}
 #outputs li,
 #files li {
   overflow-wrap: anywhere;
@@ -320,5 +331,8 @@ details {
   }
   #picture {
     flex-direction: column;
+  }
+  .video-guidance {
+    grid-template-columns: minmax(0, 1fr);
   }
 }

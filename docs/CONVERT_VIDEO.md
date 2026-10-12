@@ -1,8 +1,9 @@
 # Convert Video
 
-One **Media → Tools → Convert Video** button creates MP4 sharing copies. Format
-and resolution belong to the same operation, so there is no separate resize tool.
-This version outputs MP4; FFmpeg handles MOV, MP4, and other supported input files.
+**Media → Tools → Convert Video** opens a resize/conversion editor. It defaults to
+**Resize only**, with audio effects off. Resolution and container (Automatic, MP4,
+MOV) are independent choices. **None** plus Unchanged resolution only remuxes;
+**SDR sharing** explicitly converts to broadly compatible H.264/AAC.
 
 ## Install the button
 
@@ -50,7 +51,7 @@ Output
 names are `name-mp4-1080p.mp4`, etc. Existing results get numbered suffixes. Originals
 remain untouched. The detail log says whether each stream was copied or encoded.
 The shared editor also offers explicit video preservation and optional audio controls;
-Convert Video starts with audio effects off and SDR sharing selected. See
+Convert Video starts with audio effects off and Resize only selected. See
 [Custom conversion](CUSTOM_CONVERSION.md).
 
 Open the job logs if a conversion fails:
@@ -60,6 +61,22 @@ open "$HOME/dev/scripts/macbook/build/video-conversion-jobs"
 ```
 
 ## Quality and Instagram
+
+Resize only preserves color tags, pixel format, displayed frame timestamps and
+the selected audio packets. HDR sources remain HDR; supported Dolby Vision profile
+8 retains HDR metadata in MP4. The writer refuses MOV for that combination.
+Re-encoding is unavoidable when changing resolution, and reduced resolution usually
+reduces size but does not guarantee a particular file size. Frame validation examines
+decoded timestamps because iPhone container counts can include hidden preroll frames.
+
+The page includes practical guidelines: SDR H.264/AAC MP4 at 540p/720p for texting,
+1080p for social uploads, H.264 for broader compatibility, HEVC for smaller files
+on modern devices, and MOV for Apple editing workflows. These are starting points,
+not service-specific limits or upload guarantees. Apple's [HEVC compatibility guidance](https://support.apple.com/116944)
+and [FFmpeg codec documentation](https://ffmpeg.org/ffmpeg-codecs.html#libx265)
+provide background. Preserve framing; there is no automatic social-media crop.
+
+The following encoding behavior applies to the explicit SDR sharing path:
 
 - Compatible **AAC-LC mono/stereo audio at up to 48 kHz is copied**, with no new
   lossy encoding—even when the video is resized. No EQ, compression, normalization,

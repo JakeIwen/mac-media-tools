@@ -179,13 +179,22 @@ function video() {
   if (mode === "none") current.video.resolution = "original";
   $("resolution").value = current.video.resolution;
   $("resolution").disabled = mode === "none";
-  $("tone-label").hidden = mode === "none";
+  $("tone-label").hidden = mode === "none" || mode === "resize";
   $("picture").hidden = mode !== "adjust";
-  $("share").disabled = mode !== "none" || !current.audio_enabled;
-  $("video-note").textContent =
-    mode === "none"
-      ? "Original video is copied. Dolby Vision uses MP4 so its metadata survives; processed audio can remain lossless."
-      : "Video is encoded to SDR H.264 at 30 fps. HDR tone mapping can change brightness and color; audio is AAC for sharing.";
+  $("share").disabled =
+    !["none", "resize"].includes(mode) || !current.audio_enabled;
+  if (!["none", "resize"].includes(mode)) $("share").value = "true";
+  const notes = {
+    none: "Video pixels, resolution, frame rate and HDR metadata are preserved. A different container may remux the streams without reducing file size. For Dolby Vision, choose MP4; MOV cannot preserve its metadata in this tool.",
+    resize:
+      current.video.resolution === "original"
+        ? "Original size, colors and frame rate are preserved. The file may only be remuxed when the selected container permits it. For Dolby Vision, choose MP4; MOV cannot preserve its metadata in this tool."
+        : "Resolution changes while colors and frame rate are preserved. The source determines the compatible video codec. For Dolby Vision, choose MP4; MOV cannot preserve its metadata in this tool.",
+    sdr: "Video is encoded as SDR H.264. HDR tone mapping can change brightness and color; audio is AAC.",
+    adjust:
+      "Video is adjusted and encoded as SDR H.264. HDR tone mapping can change brightness and color; audio is AAC.",
+  };
+  $("video-note").textContent = notes[mode] || "";
 }
 function fill() {
   for (const key of Object.keys(labels))
@@ -195,6 +204,8 @@ function fill() {
   $("audio-enabled").checked = current.audio_enabled;
   $("video-mode").value = current.video.mode;
   $("resolution").value = current.video.resolution;
+  current.video.container ||= "auto";
+  $("container").value = current.video.container;
   $("tone-map").value = current.video.tone_map;
   $("share").value = String(current.share);
   for (const k of ["brightness", "contrast", "saturation"]) {
@@ -224,8 +235,9 @@ function audioEnabled() {
 function settings() {
   const value = clone(current);
   value.audio.label = $("name").value.trim() || "Custom";
-  value.share =
-    value.video.mode === "none" ? $("share").value === "true" : true;
+  value.share = ["none", "resize"].includes(value.video.mode)
+    ? $("share").value === "true"
+    : true;
   return value;
 }
 function formatSize(bytes) {
@@ -473,8 +485,12 @@ function bindControls() {
     }
   };
   $("video-mode").onchange = video;
-  $("resolution").onchange = () =>
-    (current.video.resolution = $("resolution").value);
+  $("resolution").onchange = () => {
+    current.video.resolution = $("resolution").value;
+    video();
+  };
+  $("container").onchange = () =>
+    (current.video.container = $("container").value);
   $("tone-map").onchange = () => (current.video.tone_map = $("tone-map").value);
   for (const key of ["brightness", "contrast", "saturation"])
     $(key).oninput = () => {
@@ -492,6 +508,7 @@ function setup() {
   $("title").textContent = data.title;
   presetOptions();
   options($("video-mode"), data.video_modes);
+  options($("container"), data.containers);
   options($("tone-map"), data.tone_maps);
   const initialPreset = Object.entries(presets).find(
     ([, preset]) =>

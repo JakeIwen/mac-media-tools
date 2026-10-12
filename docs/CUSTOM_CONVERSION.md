@@ -43,13 +43,26 @@ from an audio-plus-SDR job are attached to the final output's report folder.
 
 Video choices:
 
+The **Container** selector independently chooses Automatic, MP4 or MOV. Older
+saved recipes without this field load as Automatic. Changing a container alone
+does not materially shrink a file or convert its codecs. If a combination cannot
+preserve the selected streams, the operation fails without publishing an output.
+
 - **None — preserve original video** is the default. No resizing, frame-rate
   conversion, tone mapping or picture adjustments. The compressed video is copied.
   Processed audio can use lossless PCM in MOV or ALAC in MP4 for Dolby Vision,
   or explicitly selected AAC MP4. With audio effects disabled, the original
   selected audio track is copied, rather than being normalized.
+- **Resize only — preserve colors and timing** changes resolution without tone
+  mapping or frame-rate conversion. Audio is copied unchanged when effects are off.
+  H.264/HEVC inputs are supported; resizing preserves the source pixel format and
+  color tags. HLG/PQ stays HDR; supported single-layer Dolby Vision profile 8 is
+  re-encoded with its HDR metadata in MP4. MOV cannot retain that Dolby Vision
+  configuration in this writer and is refused for preservation mode.
+  Selecting Unchanged resolution performs a stream-copy remux instead.
 - **SDR sharing** converts to H.264/AAC MP4 at original/1080p/720p/540p size.
-  HDR tone mapping is explicit, with Hable, Mobius or Reinhard choices. This can
+  MOV is also available when explicitly selected. HDR tone mapping is explicit,
+  with Hable, Mobius or Reinhard choices. This can
   change the appearance; no promise of matching QuickTime's HDR display rendering.
 - **SDR + picture adjustments** additionally exposes brightness, contrast and
   saturation. These controls require video re-encoding.

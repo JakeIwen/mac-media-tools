@@ -19,7 +19,7 @@ import performance_audio as media
 import performance_audio_effects as effects
 import conversion_reports
 from conversion_jobs import ConversionJobs
-from conversion_settings import ConversionSettings, VideoSettings, VIDEO_MODES, TONE_MAPS
+from conversion_settings import ConversionSettings, VideoSettings, VIDEO_MODES, TONE_MAPS, CONTAINERS
 from media_selection import MediaSelection, SelectionOrigin, select_media
 from media_task_control import TaskState
 
@@ -56,6 +56,7 @@ class EditorServer(ThreadingHTTPServer):
                     'initial': self.initial, 'title': self.title,
                     'task_states': {state.name: state.value for state in TaskState},
                     'ranges': effects.RANGES, 'video_modes': VIDEO_MODES, 'tone_maps': TONE_MAPS,
+                    'containers': CONTAINERS,
                     'video_default': asdict(VideoSettings()), 'job': self.jobs.status()}
 
     def dispatch(self, route, value):
@@ -213,8 +214,8 @@ def launch_for_tool(mode, args):
 
 def initial_settings(args, config):
     name, preset = effects.selected_preset(args.preset, config, args.reverb, args.ambience)
-    video = VideoSettings(mode='sdr', resolution=args.resolution, tone_map='mobius') if args.mode == 'video' else VideoSettings()
-    settings = ConversionSettings(preset, video, args.mode != 'video', args.share or args.mode == 'video')
+    video = VideoSettings(mode='resize', resolution=args.resolution) if args.mode == 'video' else VideoSettings()
+    settings = ConversionSettings(preset, video, args.mode != 'video', args.share)
     return settings.wire(), name if args.mode == 'audio' else 'custom'
 
 

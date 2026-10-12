@@ -7,10 +7,11 @@ import threading
 import uuid
 
 import convert_video
+import video_export
 import conversion_reports
 import performance_audio as media
 import performance_audio_effects as effects
-from conversion_settings import ConversionSettings, VideoSettings
+from conversion_settings import ConversionSettings, VideoSettings, PRESERVATION_MODES
 from conversion_storage import read_presets, write_json
 from media_task_control import MediaTask, TaskStatus
 
@@ -101,35 +102,29 @@ class ConversionJobs:
         parent = self.output_dir or source.parent
         info = media.probe(source)
         before = media.fingerprint(source)
+        if settings.video.mode in PRESERVATION_MODES:
+            video_export.plan_export(info, settings.video, self.audio_track)
         staging = job / uuid.uuid4().hex
         staging.mkdir()
         intermediate = source
         if settings.audio_enabled:
             intermediate = effects.process(source, self.slug, config, share=settings.share,
                 audio_track=self.audio_track, output_dir=parent if settings.video.mode == 'none' else staging,
-                on_published=on_published if settings.video.mode == 'none' else None)
-        if settings.video.mode != 'none':
+                on_published=on_published if settings.video.mode == 'none' else None,
+                container=settings.video.container if settings.video.mode in PRESERVATION_MODES else 'auto')
+        if settings.video.mode not in PRESERVATION_MODES:
             result = convert_video.convert(intermediate, settings.video.resolution, parent,
                 audio_track=0 if settings.audio_enabled else self.audio_track, video_options=settings.video, on_published=on_published)
-        elif settings.audio_enabled:
+        elif settings.audio_enabled and settings.video.mode == 'none':
             result = intermediate
         else:
-            result = self.copy_original(source, parent, settings, info, before, on_published)
+            result = video_export.export(intermediate, settings.video, parent,
+                audio_track=0 if settings.audio_enabled else self.audio_track, on_published=on_published)
         outcome = ConversionResult(result)
         if media.fingerprint(source) != before:
             outcome.warnings.append('Source changed after processing; review the saved output.')
         self.save_recipe(source, settings, intermediate, outcome)
         return outcome
-
-    def copy_original(self, source, parent, settings, info, before, on_published):
-        destination = parent / (source.stem + '-custom' + media.replacement_suffix(info, settings.share))
-        video, audio = media.stream(info, 'video'), media.stream(info, 'audio', self.audio_track)
-        def validate(output):
-            media.validate_video(info, output, 1)
-            if media.fingerprint(source) != before: raise media.Error('Source changed during processing.')
-        return media.publish(['-i', source, '-map', f"0:{video['index']}", '-map', f"0:{audio['index']}",
-                              '-c', 'copy', *media.mov_options()], destination, validate,
-                             numbered=True, preserve_completed=True, on_published=on_published)
 
     @staticmethod
     def save_recipe(source, settings, intermediate, outcome):

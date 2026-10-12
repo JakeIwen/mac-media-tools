@@ -14,6 +14,7 @@ import subprocess
 import sys
 import tempfile
 import time
+from media_formats import CONTAINERS
 
 # Imported effects must not create __pycache__ inside a signed app bundle.
 sys.dont_write_bytecode = True
@@ -183,8 +184,14 @@ def has_dolby_vision(info):
                for side in stream(info, "video").get("side_data_list", []))
 
 
-def replacement_suffix(info, share=False):
+def replacement_suffix(info, share=False, container='auto'):
     # FFmpeg writes the Dolby Vision configuration box in MP4 mode, not MOV.
+    if container not in CONTAINERS:
+        raise Error('Unknown output file format.')
+    if container != 'auto':
+        if container == 'mov' and has_dolby_vision(info):
+            raise Error('Choose MP4 to preserve Dolby Vision metadata; this writer cannot preserve it in MOV.')
+        return '.' + container
     return ".mp4" if share or has_dolby_vision(info) else ".mov"
 
 
@@ -219,7 +226,7 @@ def lossless_codec(audio):
 
 
 def replace(video, audio, output=None, share=False, tolerance=0.25,
-            allow_mismatch=False, numbered=False, audio_filter=None, on_published=None):
+            allow_mismatch=False, numbered=False, audio_filter=None, on_published=None, container='auto'):
     before_video, before_audio = fingerprint(video), fingerprint(audio)
     info, audio_info = probe(video), probe(audio)
     v, a = stream(info, "video"), stream(audio_info, "audio")
@@ -232,7 +239,7 @@ def replace(video, audio, output=None, share=False, tolerance=0.25,
             raise Error(message + "\nUse --allow-duration-mismatch only if intentional; "
                         "it keeps both tracks in full without stretching or trimming.")
         print("Warning: " + message, file=sys.stderr)
-    extension = replacement_suffix(info, share)
+    extension = replacement_suffix(info, share, container)
     suffix = ("-share" if share else "-finished") + extension
     destination = output or video.with_name(video.stem + suffix)
     if destination.suffix.lower() != extension:

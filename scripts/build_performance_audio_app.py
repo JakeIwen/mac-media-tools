@@ -38,7 +38,7 @@ def main():
     for name in ("conversion_settings.py", "conversion_jobs.py", "conversion_editor.py",
                  "conversion_editor.html", "conversion_editor.css", "conversion_editor.js",
                  "conversion_storage.py", "conversion_worker.py", "media_task_control.py", "media_selection.py",
-                 "conversion_reports.py"):
+                 "conversion_reports.py", "media_formats.py", "video_export.py"):
         shutil.copy2(macbook / "scripts" / name, resources)
     (resources / "bpm-python-path.txt").write_text(str(macbook / "build/bpm-venv/bin/python") + "\n")
     (resources / "reports-path.txt").write_text(str(macbook / "build/conversion-reports") + "\n")
@@ -56,7 +56,7 @@ def main():
     with plist_path.open("rb") as file:
         plist = plistlib.load(file)
     plist.update(CFBundleIdentifier="com.jacobr.performance-audio",
-                 CFBundleName="Performance Audio", CFBundleShortVersionString="2.4",
+                 CFBundleName="Performance Audio", CFBundleShortVersionString="2.5",
                  NSHighResolutionCapable=True)
     with plist_path.open("wb") as file:
         plistlib.dump(plist, file)

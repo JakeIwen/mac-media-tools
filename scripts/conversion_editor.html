@@ -47,6 +47,7 @@
                 <option>720p</option>
                 <option>540p</option>
               </select></label
+            ><label>File format<select id="container"></select></label
             ><label id="tone-label"
               >HDR → SDR mapping<select id="tone-map"></select
             ></label>
@@ -83,18 +84,36 @@
             >
           </div>
           <label id="encoding-label"
-            >Processed audio format<select id="share">
+            >Audio format when effects are applied<select id="share">
               <option value="false">
-                Lossless — PCM MOV / ALAC MP4 for Dolby Vision
+                Lossless — PCM in MOV / ALAC where supported
               </option>
-              <option value="true">AAC 320 kb/s MP4</option>
+              <option value="true">AAC 320 kb/s</option>
             </select></label
           >
-          <p class="note">
-            SDR sharing uses H.264/AAC MP4 and may change HDR appearance. None
-            copies the original video without changing pixels, resolution, frame
-            rate or HDR metadata. New files are created beside the originals.
+          <p class="note" id="audio-format-note">
+            This choice changes the audio only when Apply audio effects is on.
           </p>
+          <div class="video-guidance note">
+            <p><strong>Texting:</strong> H.264/AAC MP4, SDR 540p or 720p.</p>
+            <p>
+              <strong>Instagram / social uploads:</strong> H.264/AAC MP4, SDR
+              1080p; keep the original framing.
+            </p>
+            <p>
+              <strong>General use:</strong> MP4/H.264 favors compatibility; HEVC
+              usually makes smaller files for modern devices.
+            </p>
+            <p>
+              <strong>Apple editing:</strong> MOV is useful; high-quality
+              editing codecs can make larger files.
+            </p>
+            <p>
+              Only downscales; no cropping. Lower resolution usually reduces
+              size, while changing the extension alone does not. Guidelines, not
+              upload guarantees.
+            </p>
+          </div>
         </section>
         <section id="audio-section">
           <h2>Audio</h2>
