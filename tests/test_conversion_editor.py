@@ -60,7 +60,9 @@ class EditorTests(unittest.TestCase):
         self.assertEqual(caught.exception.code, 403)
         headers = {'X-Editor-Token': server.token, 'Content-Type': 'application/json'}
         with urlopen(Request(server.origin+'/state', headers=headers)) as response:
-            self.assertIn('jake-preferred', json.load(response)['presets'])
+            snapshot = json.load(response)
+            self.assertIn('jake-preferred', snapshot['presets'])
+            self.assertEqual(set(snapshot['preservation_modes']), editor.PRESERVATION_MODES)
         request = Request(server.origin+'/save', data=json.dumps(self.value).encode(),
                           headers={**headers, 'Origin': 'https://foreign.invalid'})
         with self.assertRaises(HTTPError): urlopen(request)

@@ -19,7 +19,7 @@ import performance_audio as media
 import performance_audio_effects as effects
 import conversion_reports
 from conversion_jobs import ConversionJobs
-from conversion_settings import ConversionSettings, VideoSettings, VIDEO_MODES, TONE_MAPS, CONTAINERS
+from conversion_settings import ConversionSettings, VideoSettings, VIDEO_MODES, TONE_MAPS, CONTAINERS, PRESERVATION_MODES
 from media_selection import MediaSelection, SelectionOrigin, select_media
 from media_task_control import TaskState
 
@@ -57,6 +57,7 @@ class EditorServer(ThreadingHTTPServer):
                     'task_states': {state.name: state.value for state in TaskState},
                     'ranges': effects.RANGES, 'video_modes': VIDEO_MODES, 'tone_maps': TONE_MAPS,
                     'containers': CONTAINERS,
+                    'preservation_modes': sorted(PRESERVATION_MODES),
                     'video_default': asdict(VideoSettings()), 'job': self.jobs.status()}
 
     def dispatch(self, route, value):

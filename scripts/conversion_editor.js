@@ -179,11 +179,11 @@ function video() {
   if (mode === "none") current.video.resolution = "original";
   $("resolution").value = current.video.resolution;
   $("resolution").disabled = mode === "none";
-  $("tone-label").hidden = mode === "none" || mode === "resize";
+  $("tone-label").hidden = data.preservation_modes.includes(mode);
   $("picture").hidden = mode !== "adjust";
   $("share").disabled =
-    !["none", "resize"].includes(mode) || !current.audio_enabled;
-  if (!["none", "resize"].includes(mode)) $("share").value = "true";
+    !data.preservation_modes.includes(mode) || !current.audio_enabled;
+  if (!data.preservation_modes.includes(mode)) $("share").value = "true";
   const notes = {
     none: "Video pixels, resolution, frame rate and HDR metadata are preserved. A different container may remux the streams without reducing file size. For Dolby Vision, choose MP4; MOV cannot preserve its metadata in this tool.",
     resize:
@@ -235,7 +235,7 @@ function audioEnabled() {
 function settings() {
   const value = clone(current);
   value.audio.label = $("name").value.trim() || "Custom";
-  value.share = ["none", "resize"].includes(value.video.mode)
+  value.share = data.preservation_modes.includes(value.video.mode)
     ? $("share").value === "true"
     : true;
   return value;
