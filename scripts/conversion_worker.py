@@ -8,6 +8,7 @@ import sys
 sys.dont_write_bytecode = True
 import convert_video
 import performance_audio as media
+import conversion_reports
 from conversion_jobs import ConversionJobs, ConversionProgress
 from conversion_settings import ConversionSettings
 from conversion_storage import write_json
@@ -24,6 +25,7 @@ def run_job(folder):
     progress = ConversionProgress(total=len(jobs.files))
     def record_output(path):
         progress.outputs.append(str(path))
+        progress.report_ids.append(conversion_reports.generation_id(path))
         write_json(folder/'progress.json', asdict(progress))
     try:
         for index, source in enumerate(jobs.files, 1):

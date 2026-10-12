@@ -17,6 +17,7 @@ sys.dont_write_bytecode = True
 import convert_video
 import performance_audio as media
 import performance_audio_effects as effects
+import conversion_reports
 from conversion_jobs import ConversionJobs
 from conversion_settings import ConversionSettings, VideoSettings, VIDEO_MODES, TONE_MAPS
 from media_selection import MediaSelection, SelectionOrigin, select_media
@@ -87,6 +88,8 @@ class EditorServer(ThreadingHTTPServer):
         self.selection_revision += 1
 
     def dispatch_locked(self, route, value):
+        if route == '/report':
+            return self.read_job_report(value)
         if route == '/convert':
             self.require_idle()
             if value.get('selection_revision') != self.selection_revision:
@@ -117,6 +120,21 @@ class EditorServer(ThreadingHTTPServer):
             self.closing = True
             return {'closed': True}
         raise media.Error('Unknown request.')
+
+    def read_job_report(self, value):
+        if not self.jobs.job or value.get('job_id') != self.jobs.job.name:
+            raise media.Error('These reports belong to a different processing job.')
+        progress = self.jobs.status()['progress']
+        output_index, report_index = value.get('output_index'), value.get('report_index')
+        if type(output_index) is not int or not 0 <= output_index < len(progress['report_ids']):
+            raise media.Error('Unknown output report.')
+        generation = progress['report_ids'][output_index]
+        artifacts = conversion_reports.artifacts(generation)
+        if type(report_index) is not int or not 0 <= report_index < len(artifacts):
+            raise media.Error('Unknown report.')
+        if value.get('name') != artifacts[report_index].name:
+            raise media.Error('The report list changed. Refresh the reports before opening one.')
+        return conversion_reports.read_report(generation, artifacts[report_index])
 
 
 class EditorHandler(BaseHTTPRequestHandler):

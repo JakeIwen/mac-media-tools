@@ -1,6 +1,7 @@
 """Run with PYTHONPATH=macbook/scripts; exercise public editor and job entry points."""
 from dataclasses import asdict
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -12,6 +13,7 @@ from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
 import conversion_editor as editor
+import conversion_reports as reports
 from conversion_jobs import ConversionJobs
 from conversion_settings import ConversionSettings, VideoSettings
 
@@ -25,6 +27,9 @@ class EditorTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
+        environment = patch.dict(os.environ, {"PERFORMANCE_AUDIO_REPORTS_DIR": str(self.root / "reports")})
+        environment.start()
+        self.addCleanup(environment.stop)
         self.config = editor.effects.DEFAULT_CONFIG
         self.preset = editor.effects.load_presets(self.config)['presets']['jake-preferred']
         self.value = {'audio': self.preset, 'video': asdict(VideoSettings()), 'audio_enabled': True, 'share': False}
@@ -84,7 +89,13 @@ class EditorTests(unittest.TestCase):
         changed = jobs.convert_one(source, ConversionSettings.parse(self.value), job, config).path
         self.assertNotEqual(packets(source), packets(changed))
         self.assertEqual(source.read_bytes(), before)
-        self.assertTrue(changed.with_name(changed.name+'.conversion.json').exists())
+        self.assertTrue((reports.output_directory(changed) / 'conversion.json').exists())
+        self.assertFalse(list(self.root.glob('*.audio-report.*')))
+        self.assertFalse(list(self.root.glob('*.conversion.json')))
+        self.assertEqual(len(reports.artifacts(reports.generation_id(changed))), 3)
+        final_report = json.loads((reports.output_directory(changed)/'audio-report.json').read_text())
+        self.assertEqual(final_report['output'], str(changed))
+        self.assertEqual(final_report['levels']['output'], editor.effects.stage_levels(editor.effects.loudness(changed)))
 
     def test_recipe_failure_keeps_published_output_authoritative(self):
         from conversion_jobs import ConversionResult
@@ -94,6 +105,18 @@ class EditorTests(unittest.TestCase):
         with patch('conversion_jobs.write_json', side_effect=OSError('disk full')):
             ConversionJobs.save_recipe(self.root/'source.mov', ConversionSettings.parse(self.value), result, outcome)
         self.assertEqual(outcome.path.read_bytes(), b'published')
+        self.assertIn('Video saved', outcome.warnings[0])
+
+    def test_final_measurement_failure_is_a_report_warning(self):
+        from conversion_jobs import ConversionResult
+        intermediate, output = self.root/'intermediate.mp4', self.root/'finished.mp4'
+        intermediate.write_bytes(b'intermediate')
+        output.write_bytes(b'published')
+        (reports.output_directory(intermediate)/'audio-report.json').write_text('{"levels": {}}')
+        outcome = ConversionResult(output)
+        with patch.object(editor.effects, 'loudness', side_effect=editor.media.Error('measurement failed')):
+            ConversionJobs.save_recipe(intermediate, ConversionSettings.parse(self.value), intermediate, outcome)
+        self.assertTrue(output.exists())
         self.assertIn('Video saved', outcome.warnings[0])
 
     def test_closed_session_cannot_start_and_stale_selection_is_rejected(self):

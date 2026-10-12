@@ -3,15 +3,18 @@
 import array
 import json
 import math
+import os
 from pathlib import Path
 import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 import performance_audio as pa
 import performance_audio_effects as fx
+import conversion_reports as reports
 
 
 class EffectsTests(unittest.TestCase):
@@ -19,6 +22,9 @@ class EffectsTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory(prefix="performance-dsp-test-")
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
+        environment = patch.dict(os.environ, {"PERFORMANCE_AUDIO_REPORTS_DIR": str(self.root / "reports")})
+        environment.start()
+        self.addCleanup(environment.stop)
         self.video = self.root / "take's audio.mov"
         self.ff("-f", "lavfi", "-i", "testsrc2=size=128x96:rate=24:duration=4",
                 "-f", "lavfi", "-i", "sine=frequency=440:sample_rate=48000:duration=4",
@@ -117,7 +123,7 @@ class EffectsTests(unittest.TestCase):
         self.assertTrue((self.root / "take's audio-clean-2.mov").is_file())
 
     def report(self, result):
-        return json.loads(result.with_name(result.name + ".audio-report.json").read_text())
+        return json.loads((reports.output_directory(result) / "audio-report.json").read_text())
 
     def test_quiet_and_loud_recordings_receive_similar_compression_after_matching(self):
         quiet = self.root / "quiet.mov"
@@ -143,17 +149,17 @@ class EffectsTests(unittest.TestCase):
         self.assertEqual(stats["percent_time_attenuated_at_least_0_1_db"], 100)
         self.assertAlmostEqual(stats["measured_audio_seconds"], 4)
 
-    def test_bypassed_compressor_and_report_sidecars(self):
+    def test_bypassed_compressor_and_central_reports(self):
         result = fx.process(self.video, "clean")
         report = self.report(result)
         self.assertFalse(report["compressor"]["enabled"])
         self.assertEqual(report["levels"]["after_input_matching"], report["levels"]["after_compression"])
-        text = result.with_name(result.name + ".audio-report.txt").read_text()
+        text = (reports.output_directory(result) / "audio-report.txt").read_text()
         self.assertIn("bypassed", text)
         self.assertIn("Final encoded output", text)
-        original = result.with_name(result.name + ".audio-report.json").read_bytes()
+        original = (reports.output_directory(result) / "audio-report.json").read_bytes()
         second = fx.save_report(result, report)
-        self.assertEqual(result.with_name(result.name + ".audio-report.json").read_bytes(), original)
+        self.assertEqual((reports.output_directory(result) / "audio-report.json").read_bytes(), original)
         self.assertTrue(all("audio-report-2" in p.name for p in second))
 
     def test_boost_cap_is_shared_between_input_and_output(self):
@@ -267,7 +273,7 @@ class EffectsTests(unittest.TestCase):
         self.assertEqual(report["levels"]["after_compression"], report["levels"]["after_spatial_effects"])
         self.assertEqual(report["spatial_effects"]["ambience_return_gain"], 0)
         self.assertEqual(report["spatial_effects"]["reverb_return_gain"], 0)
-        text = result.with_name(result.name + ".audio-report.txt").read_text()
+        text = (reports.output_directory(result) / "audio-report.txt").read_text()
         self.assertIn("Ambience: bypassed", text)
         self.assertIn("Reverb: bypassed", text)
         self.assertEqual(self.packets(self.video), self.packets(result))

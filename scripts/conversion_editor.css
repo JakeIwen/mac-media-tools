@@ -26,6 +26,21 @@ fieldset {
 #cancel {
   color: #a52a24;
 }
+dialog {
+  max-width: min(1000px, 92vw);
+  max-height: 85vh;
+  border: 1px solid #bac5d3;
+  border-radius: 10px;
+}
+dialog pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 13px;
+}
+.report-link {
+  margin-left: 12px;
+  color: #285bea;
+}
 body {
   margin: 0;
   background: #f3f5f8;

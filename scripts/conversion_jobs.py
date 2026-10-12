@@ -7,6 +7,7 @@ import threading
 import uuid
 
 import convert_video
+import conversion_reports
 import performance_audio as media
 import performance_audio_effects as effects
 from conversion_settings import ConversionSettings, VideoSettings
@@ -20,6 +21,7 @@ class ConversionProgress:
     index: int = 0
     total: int = 0
     outputs: list = field(default_factory=list)
+    report_ids: list = field(default_factory=list)
     errors: list = field(default_factory=list)
     warnings: list = field(default_factory=list)
 
@@ -51,7 +53,7 @@ class ConversionJobs:
         data = effects.load_presets(self.config)
         result = {name: ConversionSettings(preset, VideoSettings()).wire()
                   for name, preset in data['presets'].items()}
-        saved, warnings = read_presets(self.storage)
+        saved, warnings = read_presets(self.storage, ConversionSettings.parse)
         result.update(saved)
         return result, warnings
 
@@ -68,7 +70,8 @@ class ConversionJobs:
                 progress = ConversionProgress.read(self.job/'progress.json')
             task = replace(task, outputs=tuple(progress.outputs), current_file=progress.current_file,
                            errors=task.errors + tuple(progress.errors))
-            return {'task': task.wire(), 'progress': asdict(progress),
+            reports = [[item.wire() for item in conversion_reports.artifacts(generation)] for generation in progress.report_ids]
+            return {'task': task.wire(), 'progress': asdict(progress), 'reports': reports,
                     'job_id': self.job.name if self.job else None}
 
     def is_running(self):
@@ -130,11 +133,17 @@ class ConversionJobs:
 
     @staticmethod
     def save_recipe(source, settings, intermediate, outcome):
-        recipe = outcome.path.with_name(outcome.path.name+'.conversion.json')
-        audio_report = intermediate.with_name(intermediate.name+'.audio-report.json')
         try:
+            folder = conversion_reports.output_directory(outcome.path)
+            recipe = folder/'conversion.json'
+            audio_report = conversion_reports.output_directory(intermediate)/'audio-report.json' if settings.audio_enabled else None
             details = json.loads(audio_report.read_text()) if settings.audio_enabled and audio_report.exists() else None
+            if details and intermediate != outcome.path:
+                final_levels = effects.stage_levels(effects.loudness(outcome.path))
+                details = {**details, 'source': str(source), 'output': str(outcome.path),
+                           'levels': {**details['levels'], 'output': final_levels}}
+                effects.save_report(outcome.path, details)
             write_json(recipe, {'source': str(source), 'output': str(outcome.path),
                                 'settings': settings.wire(), 'audio_report': details}, exclusive=True)
-        except (OSError, ValueError) as error:
+        except (media.Error, OSError, ValueError) as error:
             outcome.warnings.append(f'Video saved, but recipe could not be saved: {error}')

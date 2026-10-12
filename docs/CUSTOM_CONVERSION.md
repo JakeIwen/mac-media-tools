@@ -25,8 +25,16 @@ reverb and final normalization reuse the existing audio engine and measurements.
 **Start processing** applies the current settings once. **Save as new preset**
 stores audio and video settings together for future editor sessions, without
 overwriting built-in presets. Saved presets appear in the editor's preset lists;
-they do not each create another BTT menu item. The `.conversion.json` sidecar
-records the exact recipe and available audio measurements.
+they do not each create another BTT menu item. Reports are stored in the Git-ignored
+`macbook/build/conversion-reports/` directory, with separate generation folders for
+each output. The results list links to audio measurements (text/JSON) and the
+conversion recipe (JSON), displayed in the page. Videos stay beside their originals;
+new report files do not. Existing adjacent reports are not moved or deleted.
+
+The recipe records the exact settings and available audio measurements. Report
+references are captured when an output is published, so links still work if that
+video is subsequently moved/deleted or its filename reused. Audio measurements
+from an audio-plus-SDR job are attached to the final output's report folder.
 
 Video choices:
 
@@ -41,7 +49,7 @@ Video choices:
 - **SDR + picture adjustments** additionally exposes brightness, contrast and
   saturation. These controls require video re-encoding.
 
-All outputs are new numbered files beside the source. The source is never
+Video outputs are new numbered files beside the source. The source is never
 overwritten. None retains HDR metadata and fails validation if it is lost.
 The bundled FFmpeg MOV muxer drops the Dolby Vision configuration box; the
 preservation path therefore writes MP4 with `-strict unofficial`, retaining

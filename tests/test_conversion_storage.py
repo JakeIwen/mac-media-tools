@@ -50,7 +50,7 @@ class ConversionStorageTests(unittest.TestCase):
         storage.write_json(valid, self.value(), exclusive=True)
         invalid.write_text("{broken", encoding="utf-8")
 
-        presets, warnings = storage.read_presets(self.root)
+        presets, warnings = storage.read_presets(self.root, ConversionSettings.parse)
 
         self.assertEqual(presets, {"preset-valid": self.value()})
         self.assertEqual(len(warnings), 1)

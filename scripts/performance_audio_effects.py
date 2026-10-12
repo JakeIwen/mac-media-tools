@@ -13,6 +13,7 @@ import tempfile
 import wave
 
 import performance_audio as pa
+import conversion_reports
 
 
 DEFAULT_CONFIG = Path(__file__).with_name("performance_audio_presets.json")
@@ -312,22 +313,7 @@ def format_report(report):
 
 
 def save_report(result, report):
-    """Do not overwrite preexisting sidecars, even if their video was removed."""
-    paths = []
-    for extension, content in (("txt", format_report(report)),
-                               ("json", json.dumps(report, indent=2, allow_nan=False) + "\n")):
-        number = 1
-        while True:
-            suffix = "" if number == 1 else f"-{number}"
-            path = result.with_name(f"{result.name}.audio-report{suffix}.{extension}")
-            try:
-                with path.open("x") as file:
-                    file.write(content)
-                paths.append(path)
-                break
-            except FileExistsError:
-                number += 1
-    return paths
+    return conversion_reports.save_audio(result, report, format_report(report))
 
 
 def selected_preset(preset_name, config, reverb, ambience):

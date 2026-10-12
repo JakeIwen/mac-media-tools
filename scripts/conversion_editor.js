@@ -340,6 +340,30 @@ function renderJob(job) {
         (error) => ($("status").textContent = error.message),
       );
     li.append(button);
+    for (const [reportIndex, report] of (
+      job.reports?.[index] || []
+    ).entries()) {
+      const link = text("a", report.label);
+      link.href = "#report-view";
+      link.className = "report-link";
+      link.onclick = async (event) => {
+        event.preventDefault();
+        try {
+          const result = await api("/report", {
+            job_id: job.job_id,
+            output_index: index,
+            report_index: reportIndex,
+            name: report.name,
+          });
+          $("report-title").textContent = result.label;
+          $("report-content").textContent = result.content;
+          $("report-view").showModal();
+        } catch (error) {
+          $("status").textContent = error.message;
+        }
+      };
+      li.append(link);
+    }
     $("outputs").append(li);
   });
   renderSelection();

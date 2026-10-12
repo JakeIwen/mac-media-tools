@@ -53,8 +53,9 @@ not boosted. Compression remains disabled at ratio 1 (`clean` and `subtle`);
 
 ### Measurements for each video
 
-Every completed automatic-processing video gets two neighboring files:
-`video-fuller.mov.audio-report.txt` and `video-fuller.mov.audio-report.json`.
+Every completed automatic-processing video gets `audio-report.txt` and
+`audio-report.json` in its generation folder under ignored
+`macbook/build/conversion-reports/`. The local page links to both reports.
 The text report also appears in the Terminal/job log. It includes:
 
 - Measured LUFS and true peak before input matching, after matching, after
@@ -102,6 +103,10 @@ or lossless ALAC in MP4 for Dolby Vision sources so their HDR metadata survives.
 
 For one-off settings, saved custom recipes, preset-reference markers and explicit
 video filters/None, use the [Custom conversion editor](CUSTOM_CONVERSION.md).
+
+Audio measurement reports now go to Git-ignored `macbook/build/conversion-reports/`
+instead of being written beside the movie. The conversion page links to the stored
+text/JSON reports. Direct CLI runs print their stored paths as well.
 
 ### BetterTouchTool floating menu
 
