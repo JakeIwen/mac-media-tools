@@ -147,6 +147,26 @@ class BPMTests(unittest.TestCase):
         self.assertGreater(np.max(np.abs(listening)), .05)
         self.assertAlmostEqual(bpm.analyze_samples(listening)["median_bpm"], 120, delta=2)
 
+    def test_durationless_webm_requires_explicit_bounded_decode(self):
+        source = self.root / "browser-recording.webm"
+        encoded = subprocess.run([bpm.media.tool("ffmpeg"), "-v", "error", "-nostdin",
+            "-f", "lavfi", "-i", "sine=frequency=220:duration=2.4", "-c:a", "libopus",
+            "-f", "webm", "pipe:1"], capture_output=True, check=True)
+        source.write_bytes(encoded.stdout)
+        info = bpm.media.probe(source)
+        self.assertNotIn("duration", info["format"])
+        self.assertNotIn("duration", bpm.media.stream(info, "audio", 0))
+        with self.assertRaises(bpm.media.Error):
+            bpm.decode(source, self.root, 0)
+        samples, audio = bpm.decode(source, self.root, 0, limit_seconds=10)
+        self.assertEqual(audio["codec_name"], "opus")
+        self.assertAlmostEqual(len(samples) / RATE, 2.4, delta=0.03)
+        self.assertEqual(samples.dtype, np.float32)
+        self.assertGreater(float(np.max(np.abs(samples))), 0.05)
+        bounded = self.root / "bounded"; bounded.mkdir()
+        truncated, _ = bpm.decode(source, bounded, 0, limit_seconds=1)
+        self.assertAlmostEqual(len(truncated) / RATE, 2, delta=0.03)
+
     def test_cli_rejects_invalid_analysis_parameters(self):
         for options in (("--points", "1"), ("--window-seconds", "nan"), ("--min-bpm", "250", "--max-bpm", "100")):
             result = subprocess.run([sys.executable, str(Path(bpm.__file__)), *options], capture_output=True, text=True)

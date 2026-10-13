@@ -189,14 +189,21 @@ def timeline_filters(info, audio):
     return filters
 
 
-def decode(source, directory, audio_track):
+def decode(source, directory, audio_track, limit_seconds=None):
     np, _, _ = libraries()
     info = media.probe(source)
     audio = media.stream(info, "audio", audio_track)
-    filters = timeline_filters(info, audio)
+    if limit_seconds is None:
+        filters = timeline_filters(info, audio)
+        bounded = []
+    else:
+        if not math.isfinite(limit_seconds) or limit_seconds <= 0:
+            raise media.Error("Decode limit must be finite and positive.")
+        filters = ["asetpts=PTS-STARTPTS"]
+        bounded = ["-t", str(limit_seconds + 1)]
     raw = directory / "analysis.f32"
     media.run([media.tool("ffmpeg"), "-v", "error", "-nostdin", "-i", source,
-               "-map", f"0:{audio['index']}", "-af", ",".join(filters), "-ac", "1",
+               "-map", f"0:{audio['index']}", *bounded, "-af", ",".join(filters), "-ac", "1",
                "-ar", str(SAMPLE_RATE), "-c:a", "pcm_f32le", "-f", "f32le", raw])
     if raw.stat().st_size == 0:
         raise media.Error("The selected audio track decoded to no samples.")

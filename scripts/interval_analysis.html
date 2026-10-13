@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Interval Analysis</title>
+    <link rel="stylesheet" href="/app.css" />
+    <script src="/charts.js" defer></script>
+    <script src="/app.js" defer></script>
+  </head>
+  <body>
+    <main>
+      <h1>Interval Analysis</h1>
+      <section aria-labelledby="reference-heading">
+        <h2 id="reference-heading">Reference take</h2>
+        <div class="row">
+          <button id="reference-record" class="primary" disabled>Record</button>
+          <button id="reference-stop" disabled>Stop</button>
+          <button id="reference-choose" disabled>Choose file…</button>
+          <span id="reference-clock" class="clock">0:00 elapsed</span>
+        </div>
+        <div class="recording-level">
+          <span>Microphone level</span>
+          <meter id="reference-level" min="0" max="1" value="0"
+            aria-label="Reference microphone level"></meter>
+        </div>
+        <audio id="reference-audio" controls preload="auto" aria-label="Reference take"></audio>
+        <p id="reference-duration" class="note">No reference take yet.</p>
+        <p id="reference-status" role="status"></p>
+      </section>
+      <section aria-labelledby="comparison-heading">
+        <h2 id="comparison-heading">Comparison take</h2>
+        <p>Wear headphones: the reference plays while you sing and must not reach the microphone.</p>
+        <div class="row">
+          <button id="comparison-record" class="primary" disabled>Record while reference plays</button>
+          <button id="comparison-stop" disabled>Stop</button>
+          <button id="comparison-choose" disabled>Choose file…</button>
+          <button id="playback-retry" hidden disabled>Enable playback and retry</button>
+          <span id="comparison-clock" class="clock">0:00 elapsed</span>
+        </div>
+        <div class="recording-level">
+          <span>Microphone level</span>
+          <meter id="comparison-level" min="0" max="1" value="0"
+            aria-label="Comparison microphone level"></meter>
+        </div>
+        <audio id="comparison-audio" controls preload="auto" aria-label="Comparison take"></audio>
+        <p id="comparison-duration" class="note">No comparison take yet.</p>
+        <p class="note">The measured playback delay is only an approximate hint. Automatic landmark
+          alignment and the manual offset correct the timing; they do not change the pitches.</p>
+        <p id="comparison-status" role="status"></p>
+      </section>
+      <section aria-labelledby="analysis-heading">
+        <h2 id="analysis-heading">Analysis</h2>
+        <fieldset id="alignment-controls" disabled>
+          <legend>Timing alignment</legend>
+          <div class="row">
+            <label class="check"><input id="alignment-auto" type="radio"
+              name="alignment" value="auto" checked />Automatic (recommended)</label>
+            <label class="check"><input id="alignment-manual" type="radio"
+              name="alignment" value="manual" />Manual offset</label>
+            <label for="offset-seconds">Offset (seconds)
+              <input id="offset-seconds" type="number" min="-5" max="5" step="0.01" value="0" disabled />
+            </label>
+          </div>
+        </fieldset>
+        <p class="note">Positive offset: a moment in the comparison occurs later than the same moment
+          in the reference. Automatic alignment searches <span id="alignment-range">±0.75 s</span>
+          around the playback-delay hint.</p>
+        <button id="analyze" class="primary" disabled>Analyze</button>
+        <p id="analysis-status" role="status"></p>
+        <div id="analysis-result" hidden>
+          <div class="result-card">
+            <h3 id="result-interval"></h3>
+            <p id="result-detail"></p>
+            <p id="result-simple"></p>
+          </div>
+          <ul id="analysis-warnings" class="warnings"></ul>
+          <h3>Interval distribution</h3>
+          <div id="histogram" class="chart"></div>
+          <h3>Pitch and interval over time</h3>
+          <p class="note">Gaps mean one or both takes are unvoiced. Times follow the reference take.</p>
+          <div id="timeline" class="chart"></div>
+          <h3>Interval segments</h3>
+          <ul id="segments"></ul>
+          <p id="analysis-method" class="note"></p>
+        </div>
+      </section>
+      <section aria-labelledby="save-heading">
+        <h2 id="save-heading">Save</h2>
+        <label for="session-title">Title
+          <input id="session-title" type="text" maxlength="120" disabled />
+        </label>
+        <label for="session-notes">Notes
+          <textarea id="session-notes" rows="4" maxlength="5000" disabled></textarea>
+        </label>
+        <div class="row">
+          <button id="save" disabled>Save</button>
+          <button id="reveal" disabled>Reveal in Finder</button>
+        </div>
+        <p id="save-status" role="status"></p>
+        <h3>Saved sessions</h3>
+        <ul id="sessions" class="sessions"></ul>
+      </section>
+      <section aria-labelledby="close-heading">
+        <h2 id="close-heading">Session</h2>
+        <button id="close" disabled>Close session</button>
+        <p id="session-status" role="status">Opening session…</p>
+      </section>
+    </main>
+  </body>
+</html>

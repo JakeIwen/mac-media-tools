@@ -35,6 +35,10 @@ def main():
     shutil.copy2(macbook / "scripts" / "bpm_report_template.html", resources)
     for name in ("rhythm_practice.py", "rhythm_report_template.html", "rhythm_core.js", "rhythm_ui.js"):
         shutil.copy2(macbook / "scripts" / name, resources)
+    for name in ("interval_analysis.py", "interval_core.py", "interval_result.py", "interval_takes.py",
+                 "interval_sessions.py", "loopback_session.py", "interval_analysis.html",
+                 "interval_analysis.css", "interval_analysis.js", "interval_charts.js"):
+        shutil.copy2(macbook / "scripts" / name, resources)
     for name in ("conversion_settings.py", "conversion_jobs.py", "conversion_editor.py",
                  "conversion_editor.html", "conversion_editor.css", "conversion_editor.js",
                  "conversion_storage.py", "conversion_worker.py", "media_task_control.py", "media_selection.py",
@@ -56,7 +60,7 @@ def main():
     with plist_path.open("rb") as file:
         plist = plistlib.load(file)
     plist.update(CFBundleIdentifier="com.jacobr.performance-audio",
-                 CFBundleName="Performance Audio", CFBundleShortVersionString="2.5.1",
+                 CFBundleName="Performance Audio", CFBundleShortVersionString="2.6.0",
                  NSHighResolutionCapable=True)
     with plist_path.open("wb") as file:
         plistlib.dump(plist, file)

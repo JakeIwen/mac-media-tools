@@ -1,13 +1,13 @@
 # Mac media tools
 
-Local Performance Audio, Convert Video, Custom Conversion, BPM Over Time and
-Rhythm Practice tools. Sources stay in `scripts/`; the shared Finder app and
-private runtime data stay in ignored `build/` beside it.
+Local Performance Audio, Convert Video, Custom Conversion, BPM Over Time,
+Rhythm Practice and Interval Analysis tools. Sources stay in `scripts/`; the shared
+Finder app and private runtime data stay in ignored `build/` beside it.
 
 ## Setup
 
 Run from this checkout. The source tools require FFmpeg/ffprobe and Python;
-BPM and Rhythm Practice use a separate scientific Python environment.
+BPM, Rhythm Practice and Interval Analysis share a separate scientific Python environment.
 
 ```sh
 cd ~/dev/mac-media-tools
@@ -37,6 +37,8 @@ build/bpm-venv/bin/python scripts/bpm_over_time.py --help
 - [Custom Conversion](docs/CUSTOM_CONVERSION.md): confirmation editor and saved recipes.
 - [BPM Over Time](docs/BPM_OVER_TIME.md): local rolling-tempo analysis.
 - [Rhythm Practice](docs/RHYTHM_PRACTICE.md): editable timing and listening reports.
+- [Interval Analysis](docs/INTERVAL_ANALYSIS.md): record two vocal takes, compare
+  their intervals and save recordings with notes.
 
 Original media is never overwritten. New outputs are numbered, and preservation
 checks run before publication. The editor is a short-lived authenticated loopback
@@ -53,9 +55,12 @@ See the [BTT tooling index](../scripts/macbook/bettertouchtool/README.md).
 ## Data
 
 Keep `build/custom-conversion/` (saved presets and job manifests) and
-`build/conversion-reports/` (generation-keyed reports). Job/log directories are
+`build/conversion-reports/` (generation-keyed reports), plus
+`build/interval-analysis/sessions/` (private reference/comparison recordings,
+notes and analysis metadata). Job/log directories under `build/` are
 `performance-audio-jobs`, `video-conversion-jobs`, `conversion-editor-jobs`,
-`bpm-analysis-jobs` and `rhythm-analysis-jobs`; analysis caches are in `bpm-cache`.
+`bpm-analysis-jobs`, `rhythm-analysis-jobs` and `interval-analysis-jobs`; analysis
+caches are in `bpm-cache`.
 These private files are ignored, as are the app and `bpm-venv`. Report generation
 IDs must survive a move; do not regenerate them from changed media paths.
 Editable audio defaults live in `scripts/performance_audio_presets.json`.
@@ -68,6 +73,10 @@ Tests use generated tiny media fixtures, not personal recordings. They need
 ```sh
 PYTHONPATH=scripts build/bpm-venv/bin/python -B -m unittest discover -s tests
 node --test tests/test_rhythm_core.cjs
+node --test tests/test_interval_ui.cjs
+node --check scripts/interval_analysis.js
+node --check scripts/interval_charts.js
+node --test ~/dev/scripts/macbook/tests/test_tools_menu_item.cjs
 ```
 
 BTT installer tests remain in the scripts repository. The code-shape baseline

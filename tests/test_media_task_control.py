@@ -69,20 +69,25 @@ class MediaTaskTest(unittest.TestCase):
 
     def test_cancel_interrupts_owned_process_group(self):
         child_pid = self.root / "child.pid"
-        child_source = "import time; time.sleep(60)"
+        parent_ready = self.root / "parent.ready"
+        # Cancel only after imports finish and the parent's cleanup is armed;
+        # interpreter-startup tracebacks can otherwise displace its bounded log detail.
+        child_source = (
+            "import os, pathlib, time\n"
+            f"pathlib.Path({str(child_pid)!r}).write_text(str(os.getpid()))\n"
+            "time.sleep(60)\n")
         source = (
             "import pathlib, subprocess, sys, time\n"
             f"p=subprocess.Popen([sys.executable, '-c', {child_source!r}])\n"
-            f"pathlib.Path({str(child_pid)!r}).write_text(str(p.pid))\n"
             "print('Processing source.mov', flush=True)\n"
-            "try:\n time.sleep(60)\n"
+            "try:\n"
+            f" pathlib.Path({str(parent_ready)!r}).write_text('ready')\n"
+            " time.sleep(60)\n"
             "finally:\n print('cleanup complete', flush=True)\n")
         task = self.task(source, cancel_grace=1, terminate_grace=1)
         task.start()
-        deadline = time.monotonic() + 3
-        while not child_pid.exists() and time.monotonic() < deadline:
-            time.sleep(0.01)
-        self.assertTrue(child_pid.exists())
+        self.wait_for_path(child_pid)
+        self.wait_for_path(parent_ready)
         observed = []
         polling = threading.Thread(
             target=lambda: observed.extend(task.status()["state"] for _ in range(100)))
