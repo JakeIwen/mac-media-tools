@@ -14,10 +14,10 @@ import subprocess
 import sys
 import tempfile
 import time
-from media_formats import CONTAINERS
 
-# Imported effects must not create __pycache__ inside a signed app bundle.
+# Imported helpers must not create __pycache__ inside a signed app bundle.
 sys.dont_write_bytecode = True
+from media_formats import CONTAINERS
 
 
 MANIFEST = "performance.json"
