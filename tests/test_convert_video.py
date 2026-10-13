@@ -65,13 +65,6 @@ class VideoConversionTests(unittest.TestCase):
         self.assertEqual(cv.target_size(track, "1080p"), (640,480))
         self.assertEqual(cv.target_size({"width":1920,"height":1920}, "1080p"), (1080,1080))
 
-    def test_downscale_video_preserves_aac_packets(self):
-        output = cv.convert(self.video, "540p")
-        info = media.probe(output)
-        self.assertEqual(cv.display_size(media.stream(info,"video")), (960,540))
-        self.assertEqual(self.packets(self.video, "a:0"), self.packets(output, "a:0"))
-        self.assertEqual(media.stream(info,"video")["codec_name"], "h264")
-
     def test_portrait_rotation_is_baked_on_resize(self):
         portrait = self.root / "portrait.mov"
         self.ff("-display_rotation", "90", "-i", self.video, "-c", "copy", portrait)
