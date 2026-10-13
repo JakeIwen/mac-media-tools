@@ -21,6 +21,21 @@ pa = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(pa)
 
 
+class ToolLookupTests(unittest.TestCase):
+    def test_ffmpeg_full_precedes_path(self):
+        with tempfile.TemporaryDirectory() as directory:
+            full, other = Path(directory, "full"), Path(directory, "other")
+            for folder in (full, other):
+                folder.mkdir()
+                executable = folder / "ffmpeg"
+                executable.write_text("#!/bin/sh\n")
+                executable.chmod(0o755)
+            with patch.dict(pa.os.environ, {"PATH": str(other)}) as env, \
+                    patch.object(pa, "FFMPEG_FULL", str(full)):
+                env.pop("FFMPEG", None)
+                self.assertEqual(pa.tool("ffmpeg"), str((full / "ffmpeg").resolve()))
+
+
 class PerformanceAudioTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):

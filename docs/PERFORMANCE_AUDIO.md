@@ -217,60 +217,57 @@ Pass `--config` when using its CLI to read your editable settings. Example with
 per-run independent 10% ambience and 20% reverb levels (replace the video path):
 
 ```sh
-python3 "$HOME/dev/scripts/macbook/build/Performance Audio.app/Contents/Resources/performance_audio.py" \
+python3 "$HOME/dev/mac-media-tools/build/Performance Audio.app/Contents/Resources/performance_audio.py" \
   process "$HOME/Movies/IMG_1234.MOV" --preset subtle --ambience 10 --reverb 20 \
-  --config "$HOME/dev/scripts/macbook/scripts/performance_audio_presets.json"
+  --config "$HOME/dev/mac-media-tools/scripts/performance_audio_presets.json"
 ```
 
 Use `--ambience 0` or `--reverb 0` to bypass only that effect, or both to bypass
 the spatial effects entirely. Add `--share` for MP4/AAC, `--audio-track 1` for the second track, or additional
 file paths for a batch. Outputs are `IMG_1234-subtle.mov`, then numbered copies.
 Background jobs keep logs outside the signed bundle in
-`macbook/build/performance-audio-jobs/`; use the menu's **Show processing logs**
+`build/performance-audio-jobs/`; use the menu's **Show processing logs**
 button to diagnose a failed job. The corresponding CLI command is:
 
 ```sh
-open "$HOME/dev/scripts/macbook/build/performance-audio-jobs"
+open "$HOME/dev/mac-media-tools/build/performance-audio-jobs"
 ```
 
 ## Setup
 
-The Finder app has already been built in this working checkout with FFmpeg and
-ffprobe bundled, so **no Homebrew installation is needed to use this app**:
+The Finder app is built in this working checkout and uses Homebrew's native
+Apple-silicon `ffmpeg-full` (keg-only, at `/opt/homebrew/opt/ffmpeg-full/bin`),
+which the tools prefer over `PATH` because plain `ffmpeg` lacks the zscale filter
+HDR-to-SDR conversion needs. The app also uses the existing Homebrew Python
+interpreter; it is a local utility, not a standalone redistributable. Its generated
+bundle is ignored by Git.
 
 ```sh
-open "$HOME/dev/scripts/macbook/build/Performance Audio.app"
+open "$HOME/dev/mac-media-tools/build/Performance Audio.app"
 ```
 
-This local bundle uses FFmpeg 9.0.1 Intel binaries from
-[evermeet.cx](https://evermeet.cx/ffmpeg/), a distributor linked from
-[FFmpeg's download page](https://ffmpeg.org/download.html). They run through
-Rosetta, which was verified available on this Mac. The app still uses the existing
-Homebrew Python interpreter; it is a local utility, not a standalone redistributable.
-Its generated bundle is ignored by Git.
-
-For the **source CLI**, tests, or a **fresh checkout**, install FFmpeg (includes
-ffprobe) in your normal Terminal, then build the app if desired:
+For a **fresh checkout**, install FFmpeg (includes ffprobe) in your normal Terminal,
+then build the app:
 
 ```sh
-cd ~/dev/scripts
-brew install ffmpeg
-python3 macbook/scripts/performance_audio.py doctor
-python3 macbook/scripts/build_performance_audio_app.py
+cd ~/dev/mac-media-tools
+brew install ffmpeg-full
+python3 scripts/performance_audio.py doctor
+python3 scripts/build_performance_audio_app.py
 ```
 
-You can also run the bundled CLI immediately without installing FFmpeg:
+You can also run the bundled scripts directly:
 
 ```sh
-python3 "$HOME/dev/scripts/macbook/build/Performance Audio.app/Contents/Resources/performance_audio.py" --help
+python3 "$HOME/dev/mac-media-tools/build/Performance Audio.app/Contents/Resources/performance_audio.py" --help
 ```
 
 The builder refuses to overwrite an existing app. To build an updated copy,
 choose another name with `--output`, for example:
 
 ```sh
-python3 macbook/scripts/build_performance_audio_app.py \
-  --output "$HOME/dev/scripts/macbook/build/Performance Audio Updated.app"
+python3 scripts/build_performance_audio_app.py \
+  --output "$HOME/dev/mac-media-tools/build/Performance Audio Updated.app"
 ```
 
 The app bundles the Python script and uses the Python interpreter that built it.

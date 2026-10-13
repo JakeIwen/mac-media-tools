@@ -28,15 +28,20 @@ class Error(Exception):
     pass
 
 
+FFMPEG_FULL = "/opt/homebrew/opt/ffmpeg-full/bin"
+
+
 def tool(name):
     override = os.environ.get(name.upper())
+    # Homebrew's keg-only ffmpeg-full comes before PATH: plain ffmpeg lacks the
+    # zscale filter that HDR-to-SDR conversion needs.
     candidates = [override] if override else [
-        str(Path(__file__).resolve().parent / "bin" / name),
+        str(Path(__file__).resolve().parent / "bin" / name), f"{FFMPEG_FULL}/{name}",
         shutil.which(name), f"/opt/homebrew/bin/{name}", f"/usr/local/bin/{name}"]
     for candidate in candidates:
         if candidate and Path(candidate).is_file() and os.access(candidate, os.X_OK):
             return str(Path(candidate).resolve())
-    raise Error(f"Cannot find {name}. In Terminal, run: brew install ffmpeg\n"
+    raise Error(f"Cannot find {name}. In Terminal, run: brew install ffmpeg-full\n"
                 f"Or set {name.upper()} to its executable path.")
 
 
