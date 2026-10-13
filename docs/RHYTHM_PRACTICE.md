@@ -58,15 +58,15 @@ latency is not calibrated, and the click is not used to score recorded timing.
 
 CLI accepts files, `--bpm 90`, `--minimum-gap 0.09` (range .03–.5 s),
 `--audio-track 0`, `--output-dir`, `--choose`, `--finder-selection`, `--background`,
-`--open` and `--notify`. Run using `macbook/build/bpm-venv/bin/python` and
-`macbook/scripts/rhythm_practice.py`. Default BPM is estimated; silence falls back
+`--open` and `--notify`. Run using `build/bpm-venv/bin/python` and
+`scripts/rhythm_practice.py`. Default BPM is estimated; silence falls back
 to an editable 120 BPM reference with no candidate attacks.
 
 ## Validation
 
 ```sh
-macbook/build/bpm-venv/bin/python -m unittest discover -s macbook/tests -p test_rhythm_practice.py -v
-node --test macbook/tests/test_rhythm_core.cjs macbook/tests/test_rhythm_menu.cjs
+PYTHONPATH=scripts build/bpm-venv/bin/python -m unittest discover -s tests -p test_rhythm_practice.py -v
+node --test tests/test_rhythm_core.cjs ~/dev/scripts/macbook/tests/test_rhythm_menu.cjs
 ```
 
 Sessions validate source/duration, finite settings, unique event IDs and bounds.

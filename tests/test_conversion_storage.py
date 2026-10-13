@@ -1,4 +1,4 @@
-"""Run with PYTHONPATH=macbook/scripts; test public conversion storage helpers."""
+"""Run with PYTHONPATH=scripts; test public conversion storage helpers."""
 
 from dataclasses import asdict
 import json

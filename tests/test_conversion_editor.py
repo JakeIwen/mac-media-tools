@@ -1,4 +1,4 @@
-"""Run with PYTHONPATH=macbook/scripts; exercise public editor and job entry points."""
+"""Run with PYTHONPATH=scripts; exercise public editor and job entry points."""
 from dataclasses import asdict
 import json
 import os

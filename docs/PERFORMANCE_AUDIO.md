@@ -12,7 +12,7 @@ batch. Processing runs in the background; the new video appears beside its sourc
 and is revealed in Finder. A notification reports completion or failure.
 
 ```sh
-open "$HOME/dev/scripts/macbook/build/Performance Audio.app"
+open "$HOME/dev/mac-media-tools/build/Performance Audio.app"
 ```
 
 Included presets (editable starting points, not settings tuned to your recording):
@@ -55,7 +55,7 @@ not boosted. Compression remains disabled at ratio 1 (`clean` and `subtle`);
 
 Every completed automatic-processing video gets `audio-report.txt` and
 `audio-report.json` in its generation folder under ignored
-`macbook/build/conversion-reports/`. The local page links to both reports.
+`build/conversion-reports/`. The local page links to both reports.
 The text report also appears in the Terminal/job log. It includes:
 
 - Measured LUFS and true peak before input matching, after matching, after
@@ -104,7 +104,7 @@ or lossless ALAC in MP4 for Dolby Vision sources so their HDR metadata survives.
 For one-off settings, saved custom recipes, preset-reference markers and explicit
 video filters/None, use the [Custom conversion editor](CUSTOM_CONVERSION.md).
 
-Audio measurement reports now go to Git-ignored `macbook/build/conversion-reports/`
+Audio measurement reports now go to Git-ignored `build/conversion-reports/`
 instead of being written beside the movie. The conversion page links to the stored
 text/JSON reports. Direct CLI runs print their stored paths as well.
 
@@ -118,7 +118,7 @@ with the same command style as Strip Metadata:
 ```
 
 This queries the live Tools submenu and saves a private JSON backup in
-`macbook/build`. **Tools → Performance Audio** becomes a regular button opening
+`~/dev/scripts/macbook/build`. **Tools → Performance Audio** becomes a regular button opening
 a separate vertical floating menu containing the presets/settings/log buttons.
 A top-level menu owns its layout independently of Media's horizontal container;
 setting vertical layout fields on the nested submenu did not change its display.
@@ -155,7 +155,7 @@ the menu with:
 open 'btt://trigger_named/?trigger_name=Performance%20Audio'
 ```
 
-You can also double-click `macbook/build/Performance Audio Menu.command`, or assign
+You can also double-click `~/dev/scripts/macbook/build/Performance Audio Menu.command`, or assign
 the **Performance Audio** named trigger to an existing BTT button/gesture. The
 menu's preset buttons process selected `.mov`, `.mp4`, or `.m4v` files; when
 there are none selected, a file picker opens. **Choose files** always opens a
@@ -173,18 +173,18 @@ On first use, macOS may ask the app hosting the script for permission to access
 Finder. The OS permission dialog has no supported CLI approval route. If Finder
 access is denied, use **Choose files** or pass explicit video paths to the CLI.
 
-This session could not query or install into live BTT: AppleEvents returned an
-XPC connection error and `bttcli` reported that its socket server is disabled.
-The preset was generated from documented BTT action/menu schemas and the repo's
-existing builders; actual import, Finder selection, and menu display still need
-verification in the desktop session. No live BTT settings were changed.
+BTT installers and generated menu presets remain in `~/dev/scripts/macbook/`.
+They resolve this media checkout through `btt_common.MEDIA_TOOLS`;
+`MAC_MEDIA_TOOLS` overrides the default when generating commands.
+Changing source paths requires rebuilding the app and a backed-up, guarded
+BTT command-path update. Native menu/picker behavior still needs desktop checks.
 
 ### Change the defaults
 
 Both the app UI and BTT read the editable file on each run:
 
 ```sh
-open -e "$HOME/dev/scripts/macbook/scripts/performance_audio_presets.json"
+open -e "$HOME/dev/mac-media-tools/scripts/performance_audio_presets.json"
 ```
 
 Change `default` to `clean`, `subtle`, `fuller`, or `jake-preferred`; adjust each preset's
@@ -350,37 +350,37 @@ provide a CLI for controlling GarageBand.
 
 ## CLI
 
-All examples run from `~/dev/scripts`. Replace the example input paths with yours;
+All suite CLI examples run from `~/dev/mac-media-tools`. Replace the example input paths with yours;
 you can drag a file from Finder into Terminal to enter its path.
 
 ```sh
 # Prepare multiple recordings; WAVs retain the original sample rate/channels.
-python3 macbook/scripts/performance_audio.py prepare \
+python3 scripts/performance_audio.py prepare \
   "$HOME/Movies/IMG_1234.MOV" "$HOME/Movies/IMG_1235.MOV" --reveal
 
 # Optional: also make a separate video with no audio tracks.
-python3 macbook/scripts/performance_audio.py prepare \
+python3 scripts/performance_audio.py prepare \
   "$HOME/Movies/IMG_1234.MOV" --silent
 
 # Finish after GarageBand exports edited.wav into the project.
-python3 macbook/scripts/performance_audio.py finish \
+python3 scripts/performance_audio.py finish \
   "$HOME/Movies/IMG_1234.MOV.performance"
 
 # Or combine any existing video and GarageBand export without preparation.
-python3 macbook/scripts/performance_audio.py replace \
+python3 scripts/performance_audio.py replace \
   "$HOME/Movies/IMG_1234.MOV" "$HOME/Music/edited.aiff"
 
 # Make a separate MP4 with AAC audio for sharing.
-python3 macbook/scripts/performance_audio.py replace \
+python3 scripts/performance_audio.py replace \
   "$HOME/Movies/IMG_1234.MOV" "$HOME/Music/edited.aiff" --share
 
 # Watch for exports and finish them automatically.
-python3 macbook/scripts/performance_audio.py watch \
+python3 scripts/performance_audio.py watch \
   "$HOME/Movies/IMG_1234.MOV.performance" \
   "$HOME/Movies/IMG_1235.MOV.performance"
 
 # Standalone silent-video copy.
-python3 macbook/scripts/performance_audio.py strip "$HOME/Movies/IMG_1234.MOV"
+python3 scripts/performance_audio.py strip "$HOME/Movies/IMG_1234.MOV"
 ```
 
 Run `prepare` once per source; existing project folders are refused. The two
@@ -435,5 +435,5 @@ decoded lossless audio hashes. Real iPhone Dolby Vision/Photos round trips and
 GarageBand UI operation still need checking with a representative recording.
 
 ```sh
-python3 -m unittest discover -s macbook/tests -p 'test_performance_audio*.py' -v
+PYTHONPATH=scripts python3 -m unittest discover -s tests -p 'test_performance_audio*.py' -v
 ```

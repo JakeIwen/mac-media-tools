@@ -1,0 +1,26 @@
+# Local builds, scientific runtime, reports, presets and job logs.
+build/
+scripts/performance-audio-jobs/
+
+# Private agent notes, diagnostics and recovery artifacts.
+.agent/
+.local/
+tmp/
+AGENTS.private.md
+**/secrets/
+**/log/
+
+# Interpreter, dependency and macOS output.
+*__pycache__*
+*.pyc
+node_modules/
+.DS_Store
+
+# Credentials must never enter history.
+id_rsa
+id_rsa.pub
+*rsa_id.pub
+id_dsa
+id_dsa.pub
+*.pem
+*.key

@@ -1,4 +1,4 @@
-"""Run with macbook/build/bpm-venv/bin/python -m unittest discover ..."""
+"""Run with build/bpm-venv/bin/python -m unittest discover ..."""
 import csv
 import json
 import math

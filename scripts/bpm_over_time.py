@@ -38,8 +38,8 @@ def libraries():
         from scipy import signal
     except ImportError as error:
         raise media.Error("BPM dependencies are missing. Run /opt/homebrew/bin/python3 "
-                          "~/dev/scripts/macbook/scripts/setup_bpm_analysis.py, then use "
-                          "macbook/build/bpm-venv/bin/python.") from error
+                          "~/dev/mac-media-tools/scripts/setup_bpm_analysis.py, then use "
+                          "~/dev/mac-media-tools/build/bpm-venv/bin/python.") from error
     return np, librosa, signal
 
 

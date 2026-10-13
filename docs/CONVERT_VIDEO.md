@@ -57,7 +57,7 @@ Convert Video starts with audio effects off and Resize only selected. See
 Open the job logs if a conversion fails:
 
 ```sh
-open "$HOME/dev/scripts/macbook/build/video-conversion-jobs"
+open "$HOME/dev/mac-media-tools/build/video-conversion-jobs"
 ```
 
 ## Quality and Instagram
@@ -117,14 +117,14 @@ Actual Instagram acceptance and its downstream processing have not been tested.
 The packaged CLI works without installing anything else. Replace the example path:
 
 ```sh
-python3 "$HOME/dev/scripts/macbook/build/Performance Audio.app/Contents/Resources/convert_video.py" \
+python3 "$HOME/dev/mac-media-tools/build/Performance Audio.app/Contents/Resources/convert_video.py" \
   "$HOME/Downloads/IMG_3287 2.MOV" --resolution 1080p --reveal
 ```
 
 Preview the conversion decisions without creating files:
 
 ```sh
-python3 "$HOME/dev/scripts/macbook/build/Performance Audio.app/Contents/Resources/convert_video.py" \
+python3 "$HOME/dev/mac-media-tools/build/Performance Audio.app/Contents/Resources/convert_video.py" \
   "$HOME/Downloads/IMG_3287 2.MOV" --resolution original --plan
 ```
 
@@ -132,7 +132,7 @@ Use `--interactive --finder-selection --background --notify --reveal` for the sa
 flow as the BTT button. `--choose` forces a picker when no paths are provided.
 Additional file arguments make a batch. `--output-dir DIR` uses an existing output
 folder instead of the source's folder. The source CLI at
-`macbook/scripts/convert_video.py` also finds the local app's FFmpeg automatically.
+`scripts/convert_video.py` also finds the local app's FFmpeg automatically.
 
 For a fresh checkout, install FFmpeg and build the shared app, or supply standalone
 tools using the existing builder's `--bundle-tools DIR` option. See
@@ -145,6 +145,6 @@ PCM-to-AAC conversion, orientation, aspect fit/no upscale, HDR-to-SDR output,
 timestamp offsets, silent videos, numbering, and unchanged originals:
 
 ```sh
-python3 -m unittest discover -s macbook/tests -p test_convert_video.py -v
-node --test macbook/tests/test_convert_video_menu.cjs
+PYTHONPATH=scripts python3 -m unittest discover -s tests -p test_convert_video.py -v
+node --test ~/dev/scripts/macbook/tests/test_convert_video_menu.cjs
 ```

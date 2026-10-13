@@ -117,16 +117,16 @@ local peak scores. No BPM is displayed for silence or insufficient local support
 Run with the prepared scientific Python environment:
 
 ```sh
-"$HOME/dev/scripts/macbook/build/bpm-venv/bin/python" \
-  "$HOME/dev/scripts/macbook/build/Performance Audio.app/Contents/Resources/bpm_over_time.py" \
+"$HOME/dev/mac-media-tools/build/bpm-venv/bin/python" \
+  "$HOME/dev/mac-media-tools/build/Performance Audio.app/Contents/Resources/bpm_over_time.py" \
   "$HOME/Downloads/IMG_3287 2.MOV" --points 60 --open
 ```
 
 To supply an approximate 140 BPM starting point while allowing later acceleration:
 
 ```sh
-"$HOME/dev/scripts/macbook/build/bpm-venv/bin/python" \
-  "$HOME/dev/scripts/macbook/build/Performance Audio.app/Contents/Resources/bpm_over_time.py" \
+"$HOME/dev/mac-media-tools/build/bpm-venv/bin/python" \
+  "$HOME/dev/mac-media-tools/build/Performance Audio.app/Contents/Resources/bpm_over_time.py" \
   "$HOME/Downloads/IMG_3287 2.MOV" --points 60 --bpm-hint 140 --open
 ```
 
@@ -142,19 +142,19 @@ while the local scientific libraries build caches.
 Background logs and caches live outside the signed app bundle:
 
 ```sh
-open "$HOME/dev/scripts/macbook/build/bpm-analysis-jobs"
+open "$HOME/dev/mac-media-tools/build/bpm-analysis-jobs"
 ```
 
 For a fresh checkout or a removed runtime, set up the local environment and build
 an updated app using the existing builder instructions:
 
 ```sh
-cd ~/dev/scripts
-/opt/homebrew/bin/python3 macbook/scripts/setup_bpm_analysis.py
+cd ~/dev/mac-media-tools
+/opt/homebrew/bin/python3 scripts/setup_bpm_analysis.py
 ```
 
 `bpm-requirements.txt` pins the main libraries. The environment is under
-`macbook/build/bpm-venv`; system packages are not installed or changed by this setup.
+`build/bpm-venv`; system packages are not installed or changed by this setup.
 The app records this runtime's absolute path, so keep the checkout in place.
 
 ## Validation and preview
@@ -167,8 +167,8 @@ The offline graph was checked with the clean browser: 60 points/rows, hover
 details, half/double controls and corresponding axis changes.
 
 ```sh
-macbook/build/bpm-venv/bin/python -m unittest discover -s macbook/tests -p test_bpm_over_time.py -v
-node --test macbook/tests/test_bpm_menu.cjs
+PYTHONPATH=scripts build/bpm-venv/bin/python -m unittest discover -s tests -p test_bpm_over_time.py -v
+node --test ~/dev/scripts/macbook/tests/test_bpm_menu.cjs
 ```
 
 A preview for the earlier recording was generated without changing it:

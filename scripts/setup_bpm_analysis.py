@@ -5,7 +5,7 @@ import subprocess
 import sys
 
 if sys.version_info < (3, 11):
-    raise SystemExit("Use Homebrew Python: /opt/homebrew/bin/python3 macbook/scripts/setup_bpm_analysis.py")
+    raise SystemExit("Use Homebrew Python: /opt/homebrew/bin/python3 scripts/setup_bpm_analysis.py")
 root = Path(__file__).resolve().parents[1]
 environment = root / "build" / "bpm-venv"
 if not (environment / "bin/python").exists():

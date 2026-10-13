@@ -31,7 +31,7 @@ reverb and final normalization reuse the existing audio engine and measurements.
 stores audio and video settings together for future editor sessions, without
 overwriting built-in presets. Saved presets appear in the editor's preset lists;
 they do not each create another BTT menu item. Reports are stored in the Git-ignored
-`macbook/build/conversion-reports/` directory, with separate generation folders for
+`build/conversion-reports/` directory, with separate generation folders for
 each output. The results list links to audio measurements (text/JSON) and the
 conversion recipe (JSON), displayed in the page. Videos stay beside their originals;
 new report files do not. Existing adjacent reports are not moved or deleted.
@@ -83,9 +83,9 @@ refresh retains the session in sessionStorage. No uploads or external resources.
 
 Implementation: `conversion_settings.py` is the canonical settings contract;
 `conversion_jobs.py` stores immutable saved recipes under
-`macbook/build/custom-conversion/` and calls the existing engines;
+`build/custom-conversion/` and calls the existing engines;
 `conversion_editor.py` and its HTML/CSS/JS siblings own the temporary editor.
-Logs live under `macbook/build/conversion-editor-jobs/`. Render intermediates
+Logs live under `build/conversion-editor-jobs/`. Render intermediates
 remain in each job folder for diagnosing failures.
 
 Preset and progress files are atomically published by `conversion_storage.py`.
@@ -101,7 +101,7 @@ Retries reconcile partial item/layout installs without duplicate rows or repeate
 It reuses `btt_common.js` for private verified backups and canonical comparisons.
 Do not use the older full-menu installer merely to add this entry.
 
-Validation uses the normal Python test runner with `PYTHONPATH=macbook/scripts`
+Validation uses the normal Python test runner with `PYTHONPATH=scripts`
 for `test_conversion_editor.py`, plus `test_custom_conversion_menu.cjs` in Node.
 Tests cover controls/settings validation, token/origin checks, independent saved
 presets, video packet preservation, explicit picture re-encoding and installer
