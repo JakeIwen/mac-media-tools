@@ -2,8 +2,8 @@
 
 This checkout owns the code bundled into `build/Performance Audio.app`:
 Performance Audio, Convert Video, Custom Conversion, BPM Over Time, Rhythm
-Practice and Interval Analysis. Preserve the sibling `scripts/` and `build/` layout;
-source modules resolve their runtime paths relative to it.
+Practice, Interval Analysis and Temp Card Printer. Preserve the sibling `scripts/`
+and `build/` layout; source modules resolve their runtime paths relative to it.
 
 ## Repository map and contracts
 
@@ -14,9 +14,17 @@ source modules resolve their runtime paths relative to it.
 - Dolby Vision audio replacement uses MP4 with lossless ALAC unless AAC is
   explicitly selected; `scripts/performance_audio.py` validates preserved
   video/HDR metadata before publication.
-- `scripts/media_selection.py` owns Finder/picker selection provenance;
+- `scripts/media_selection.py` owns Finder/picker selection provenance and the
+  canonical `SelectionKind` for video/image filtering;
   Performance Audio and Convert Video's interactive paths both open the
   confirmation editor.
+- `scripts/card_images.py` owns image intake (JPEG SOF/EXIF orientation parsing,
+  sips conversion and size limits) and the canonical `CardImage` record. It uses
+  system `sips`, not the scientific Python environment.
+- `scripts/card_sheet.py` owns ID-1 geometry, page grid layout and the stdlib PDF
+  writer, including JPEG XObjects, clip-based crop and cut marks.
+- `scripts/temp_card_printer.py` owns the CLI, selection through
+  `media_selection`'s image kind, numbered output and opening the PDF.
 - `scripts/media_task_control.py` owns the job-state wire contract and
   cancellation of an owned process group; `conversion_worker.py` runs foreground
   batch jobs.
@@ -51,6 +59,7 @@ source modules resolve their runtime paths relative to it.
 - `scripts/build_performance_audio_app.py` owns the bundle allowlist and pointer
   files. Build to a new path; never mutate a signed bundle in place.
 - `applescript/performance_audio.applescript` owns the native Finder droplet.
+- `tests/card_fixtures.py` shares synthetic JPEG/Exif headers and generated image fixtures.
 - `tests/` contains generated-media Python regressions and the pure rhythm-core
   Node tests. Commands are in `README.md`.
 

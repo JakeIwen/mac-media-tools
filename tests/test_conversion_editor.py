@@ -174,6 +174,20 @@ class EditorTests(unittest.TestCase):
         self.assertEqual(selection.origin, SelectionOrigin.ARGUMENTS)
         self.assertEqual(selection.files, (Path('/tmp/a.mov').resolve(),))
 
+    def test_selection_kind_keeps_video_default_and_supports_images(self):
+        from media_selection import select_media, SelectionKind
+        response = '{"paths":[],"origin":"File picker"}'
+        with patch('media_selection.media.run', return_value=response) as run:
+            select_media(True)
+            video_script = run.call_args.args[0][-1]
+            select_media(True, kind=SelectionKind.IMAGE)
+            image_script = run.call_args.args[0][-1]
+        self.assertIn('public.movie', video_script)
+        self.assertIn('mov|mp4|m4v', video_script)
+        self.assertIn('public.image', image_script)
+        self.assertIn('jpg|jpeg|png|heic|heif|tif|tiff|webp|gif|bmp', image_script)
+        self.assertIn(json.dumps(SelectionKind.IMAGE.prompt), image_script)
+
     def test_cancellation_after_publication_keeps_durable_output_record(self):
         script = '''import os, signal, sys
 from pathlib import Path

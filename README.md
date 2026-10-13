@@ -1,8 +1,9 @@
 # Mac media tools
 
 Local Performance Audio, Convert Video, Custom Conversion, BPM Over Time,
-Rhythm Practice and Interval Analysis tools. Sources stay in `scripts/`; the shared
-Finder app and private runtime data stay in ignored `build/` beside it.
+Rhythm Practice, Interval Analysis and Temp Card Printer tools. Sources stay in
+`scripts/`; the shared Finder app and private runtime data stay in ignored `build/`
+beside it.
 
 ## Setup
 
@@ -27,6 +28,7 @@ absolute interpreter, preset and report paths. Recreate, rather than move, venvs
 open 'build/Performance Audio.app'
 /opt/homebrew/bin/python3 scripts/performance_audio.py --help
 build/bpm-venv/bin/python scripts/bpm_over_time.py --help
+/opt/homebrew/bin/python3 scripts/temp_card_printer.py --help
 ```
 
 ## Workflows
@@ -39,10 +41,35 @@ build/bpm-venv/bin/python scripts/bpm_over_time.py --help
 - [Rhythm Practice](docs/RHYTHM_PRACTICE.md): editable timing and listening reports.
 - [Interval Analysis](docs/INTERVAL_ANALYSIS.md): record two vocal takes, compare
   their intervals and save recordings with notes.
+- [Temp Card Printer](docs/TEMP_CARD_PRINTER.md): lay out ID-1 card images for
+  printing, cutting and taping.
 
 Original media is never overwritten. New outputs are numbered, and preservation
 checks run before publication. The editor is a short-lived authenticated loopback
 session, not an always-on service.
+
+## Temp Card Printer
+
+Create a PDF of selected card photos/scans (JPEG, PNG, HEIC and other macOS image
+formats). No Python image packages or scientific venv are needed; intake uses
+macOS `sips`. Exif orientation is corrected, portrait images turn clockwise, and
+a centered crop fills ID-1 cards (85.60 × 53.98 mm). Check the crop before printing:
+this is not document detection or perspective correction.
+
+```sh
+/opt/homebrew/bin/python3 scripts/temp_card_printer.py --finder
+/opt/homebrew/bin/python3 scripts/temp_card_printer.py front.jpg back.png --no-open
+```
+
+Without paths or `--finder`, a file picker opens. Options include `--page a4`,
+`--copies 2` (1–20 of each image, grouped by image), `--no-cut-marks`, `--scale 1.0`
+(0.5–1.5), `--output cards.pdf` and `--json`. Default output is `Temp Cards.pdf`
+beside the first image, numbered `Temp Cards-2.pdf` and onward without overwriting.
+The PDF opens in the default viewer unless `--no-open` is given. At scale 1,
+Letter and A4 both fit 2 columns × 4 rows; additional cards spill onto new pages.
+Print at **100% / Actual Size**, not “Fit”, to preserve the specified dimensions.
+Cards and temporary derivatives stay local; files over 60 MiB or JPEG images
+over 100 megapixels are rejected. An explicit output path must end in `.pdf`.
 
 ## BetterTouchTool integration
 

@@ -39,6 +39,8 @@ def main():
                  "interval_sessions.py", "loopback_session.py", "interval_analysis.html",
                  "interval_analysis.css", "interval_analysis.js", "interval_charts.js"):
         shutil.copy2(macbook / "scripts" / name, resources)
+    for name in ("card_sheet.py", "card_images.py", "temp_card_printer.py"):
+        shutil.copy2(macbook / "scripts" / name, resources)
     for name in ("conversion_settings.py", "conversion_jobs.py", "conversion_editor.py",
                  "conversion_editor.html", "conversion_editor.css", "conversion_editor.js",
                  "conversion_storage.py", "conversion_worker.py", "media_task_control.py", "media_selection.py",

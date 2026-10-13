@@ -7,6 +7,17 @@ from pathlib import Path
 import performance_audio as media
 
 
+class SelectionKind(Enum):
+    VIDEO = (r'\.(mov|mp4|m4v)$', ('public.movie',), 'Choose videos — review before processing')
+    IMAGE = (r'\.(jpg|jpeg|png|heic|heif|tif|tiff|webp|gif|bmp)$',
+             ('public.image',), 'Choose images')
+
+    def __init__(self, extension_pattern, picker_types, prompt):
+        self.extension_pattern = extension_pattern
+        self.picker_types = picker_types
+        self.prompt = prompt
+
+
 class SelectionOrigin(str, Enum):
     FINDER = 'Finder selection'
     PICKER = 'File picker'
@@ -39,7 +50,7 @@ class MediaSelection:
         return SelectionInspection(result, signatures)
 
 
-def select_media(use_finder=False, paths=None):
+def select_media(use_finder=False, paths=None, kind=SelectionKind.VIDEO):
     if paths:
         return MediaSelection(tuple(Path(p).expanduser().resolve() for p in paths), SelectionOrigin.ARGUMENTS)
     script = '''ObjC.import('Foundation');
@@ -47,10 +58,13 @@ const app=Application.currentApplication();app.includeStandardAdditions=true;
 let paths=[],origin='Finder selection';
 if(USE_FINDER){const finder=Application('com.apple.finder');
  if(finder.running())paths=finder.selection().map(f=>ObjC.unwrap($.NSURL.URLWithString(f.url()).path));
- paths=paths.filter(p=>/\\.(mov|mp4|m4v)$/i.test(p));}
+ paths=paths.filter(p=>new RegExp(EXTENSIONS,'i').test(p));}
 if(!paths.length){origin='File picker';try{
- paths=app.chooseFile({withPrompt:'Choose videos — review before processing',ofType:['public.movie'],multipleSelectionsAllowed:true}).map(p=>p.toString());
+ paths=app.chooseFile({withPrompt:PROMPT,ofType:PICKER_TYPES,multipleSelectionsAllowed:true}).map(p=>p.toString());
 }catch(e){if(e.errorNumber===-128)paths=[];else throw e;}}
 JSON.stringify({paths,origin});'''.replace('USE_FINDER', 'true' if use_finder else 'false')
+    script = script.replace('EXTENSIONS', json.dumps(kind.extension_pattern))
+    script = script.replace('PROMPT', json.dumps(kind.prompt))
+    script = script.replace('PICKER_TYPES', json.dumps(kind.picker_types))
     value = json.loads(media.run(['/usr/bin/osascript', '-l', 'JavaScript', '-e', script]))
     return MediaSelection(tuple(Path(p).resolve() for p in value['paths']), SelectionOrigin(value['origin']))
